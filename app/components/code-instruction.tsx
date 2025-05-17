@@ -32,7 +32,7 @@ export default function CodeInstruction({
     <div className="w-full md:w-[400px] p-4 flex flex-col gap-4">
       <div>
         {currentAppDescription ? (
-          <div className="p-3 min-h-[100px] rounded-md bg-muted text-sm overflow-auto">
+          <div className="p-3 min-h-[100px] text-sm overflow-auto">
             {currentAppDescription}
           </div>
         ) : (

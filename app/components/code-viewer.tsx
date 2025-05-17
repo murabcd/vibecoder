@@ -23,7 +23,7 @@ export default function CodeViewer({
           <iframe
             className="h-full w-full border rounded-lg bg-card"
             ref={iframeRef}
-            sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-presentation"
+            sandbox="allow-scripts allow-forms allow-modals allow-popups allow-presentation"
             title="Generated App"
             src="about:blank"
           />

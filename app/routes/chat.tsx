@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 
 import { Session } from "@/lib/session";
 import { vibeCoderPrompt, appGenerationPrompt } from "@/lib/ai/prompts";
-import { getModelId, modelRealtimeMini } from "@/lib/ai/models";
+import { getModelId, modelChat, modelRealtimeMini } from "@/lib/ai/models";
 
 import Header from "@/components/header";
 import CodeViewer from "@/components/code-viewer";
@@ -50,7 +50,7 @@ const generateAppOnServer = createServerFn({ method: "POST" })
       );
     }
     const payload = {
-      model: "gpt-4o-mini",
+      model: getModelId(modelChat),
       messages: [
         { role: "system", content: appGenerationPrompt },
         { role: "user", content: appDescription },

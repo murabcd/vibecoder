@@ -1,7 +1,7 @@
 interface SessionEventHandlers {
   ontrack?: (e: RTCTrackEvent) => void;
   onopen?: () => void;
-  onmessage?: (msg: any) => void; // Consider a more specific type for msg
+  onmessage?: (msg: any) => void;
   onerror?: (e: any) => void;
   onconnectionstatechange?: (state: RTCPeerConnectionState) => void;
 }
@@ -14,7 +14,6 @@ export class Session implements SessionEventHandlers {
   private dc: RTCDataChannel | null;
   public muted: boolean;
 
-  // Event handlers
   public ontrack?: (e: RTCTrackEvent) => void;
   public onopen?: () => void;
   public onmessage?: (msg: any) => void;
@@ -23,7 +22,7 @@ export class Session implements SessionEventHandlers {
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
-    this.useSessionToken = true; // Defaulting to true as in original
+    this.useSessionToken = true;
     this.ms = null;
     this.pc = null;
     this.dc = null;
@@ -37,11 +36,6 @@ export class Session implements SessionEventHandlers {
   ) {
     await this.startInternal(stream, sessionConfig, tokenEndpointPath);
   }
-
-  // Original had startTranscription, keeping start flexible with tokenEndpointPath
-  // async startTranscription(stream: MediaStream, sessionConfig: any) {
-  //   await this.startInternal(stream, sessionConfig, "/v1/realtime/transcription_sessions");
-  // }
 
   stop() {
     if (this.dc) {
@@ -60,7 +54,6 @@ export class Session implements SessionEventHandlers {
   }
 
   setMuted(muted: boolean) {
-    // Renamed from mute to avoid conflict with this.muted and for clarity
     this.muted = muted;
     if (this.pc) {
       this.pc.getSenders().forEach((sender) => {
@@ -86,7 +79,7 @@ export class Session implements SessionEventHandlers {
       if (this.pc) this.onconnectionstatechange?.(this.pc.connectionState);
     };
 
-    this.dc = this.pc.createDataChannel("OpenAI-Realtime"); // Giving it a label
+    this.dc = this.pc.createDataChannel("OpenAI-Realtime");
     this.dc.onopen = () => this.onopen?.();
     this.dc.onmessage = (e) => {
       try {
@@ -120,7 +113,7 @@ export class Session implements SessionEventHandlers {
     tokenEndpointPath: string
   ) {
     const urlRoot = "https://api.openai.com";
-    const realtimeSdpExchangeUrl = `${urlRoot}/v1/realtime`; // URL for SDP exchange
+    const realtimeSdpExchangeUrl = `${urlRoot}/v1/realtime`;
     let sdpResponse;
 
     if (this.useSessionToken) {
@@ -129,7 +122,7 @@ export class Session implements SessionEventHandlers {
         method: "POST",
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
-          "openai-beta": "realtime-v1", // Custom header OpenAI might require
+          "openai-beta": "realtime-v1",
           "Content-Type": "application/json",
         },
         body: JSON.stringify(sessionConfig),
@@ -146,14 +139,13 @@ export class Session implements SessionEventHandlers {
         );
       }
       const sessionData = await sessionTokenResponse.json();
-      const clientSecret = sessionData.client_secret?.value; // Safely access client_secret.value
+      const clientSecret = sessionData.client_secret?.value;
       if (!clientSecret) {
         console.error("client_secret not found in session token response:", sessionData);
         throw new Error("client_secret not found in session token response");
       }
 
       sdpResponse = await fetch(realtimeSdpExchangeUrl, {
-        // Use the dedicated SDP exchange URL
         method: "POST",
         body: offer.sdp,
         headers: {
@@ -173,11 +165,9 @@ export class Session implements SessionEventHandlers {
         );
       }
     } else {
-      // This `else` block for FormData based signaling might be legacy or for different configuration
-      // Ensure this is still a supported path if useSessionToken can be false.
       const formData = new FormData();
       formData.append("session", JSON.stringify(sessionConfig));
-      formData.append("sdp", offer.sdp as string); // SDP is a string
+      formData.append("sdp", offer.sdp as string);
       sdpResponse = await fetch(realtimeSdpExchangeUrl, {
         method: "POST",
         body: formData,
@@ -199,7 +189,6 @@ export class Session implements SessionEventHandlers {
   }
 
   sendMessage(message: any) {
-    // Consider a more specific type for message
     if (this.dc && this.dc.readyState === "open") {
       this.dc.send(JSON.stringify(message));
     } else {

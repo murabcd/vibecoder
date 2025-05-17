@@ -43,7 +43,7 @@ function RootComponent() {
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html>
+    <html suppressHydrationWarning={true}>
       <head>
         <HeadContent />
       </head>
