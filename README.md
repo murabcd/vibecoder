@@ -1,5 +1,6 @@
 <a href="#">
-  <h1 align="center">VibeCoder</h1>
+  <img alt="Realtime Voice AI Vibe Coder Built With Tanstack Start, and OpenAI." src="./public/preview/vibecoder.png">
+  <h1 align="center">VibeCoder</h1>  
 </a>
 
 <p align="center">
