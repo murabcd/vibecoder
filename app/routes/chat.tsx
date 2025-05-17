@@ -264,7 +264,7 @@ function VibeCoderComponent() {
     <div className="flex flex-col h-screen">
       <Header isListening={isListening} isMuted={isMuted} onToggleMute={toggleMute} />
 
-      <div className="p-4 flex-grow flex flex-col">
+      <div className="p-2 flex-grow flex flex-col">
         <div className="flex flex-1 overflow-hidden gap-1">
           <CodeInstruction
             currentAppDescription={currentAppDescription}

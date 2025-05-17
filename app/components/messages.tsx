@@ -57,7 +57,7 @@ function Messages({
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           readOnly={isListening}
-          rows={2}
+          rows={3}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
               e.preventDefault();
@@ -69,20 +69,21 @@ function Messages({
           <Button
             size="icon"
             variant="ghost"
-            onClick={onToggleListening}
-            className="rounded-full"
-            aria-label={isListening ? "Stop listening" : "Start listening"}
-          >
-            {isListening ? <Square size={20} /> : <AudioLines size={20} />}
-          </Button>
-          <Button
-            size="icon"
             onClick={handleSendMessage}
             disabled={!inputText.trim() || isListening}
             className="rounded-full disabled:opacity-50"
             aria-label="Send message"
           >
             <ArrowUp size={20} />
+          </Button>
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={onToggleListening}
+            className="rounded-full"
+            aria-label={isListening ? "Stop listening" : "Start listening"}
+          >
+            {isListening ? <Square size={20} /> : <AudioLines size={20} />}
           </Button>
         </div>
       </div>

@@ -18,7 +18,7 @@ export default function CodeViewer({
 }: CodeViewerProps) {
   return (
     <div className="flex-1 flex flex-col min-w-0">
-      <div className="relative flex-1 min-h-0">
+      <div className="relative h-[calc(100vh-6rem)] w-full">
         {displayMode === "preview" ? (
           <iframe
             className="h-full w-full border rounded-lg bg-card"
@@ -28,11 +28,13 @@ export default function CodeViewer({
             src="about:blank"
           />
         ) : (
-          <ScrollArea className="h-full w-full border rounded-lg bg-card">
-            <pre className="p-4 text-sm whitespace-pre-wrap break-all h-full text-muted-foreground">
-              {generatedAppCode}
-            </pre>
-          </ScrollArea>
+          <div className="h-full w-full border rounded-lg bg-card overflow-hidden">
+            <ScrollArea className="h-full">
+              <pre className="p-4 text-sm whitespace-pre-wrap break-all text-muted-foreground">
+                {generatedAppCode}
+              </pre>
+            </ScrollArea>
+          </div>
         )}
 
         <div className="absolute top-3 right-3 z-10 bg-background/80 backdrop-blur-sm p-1 shadow-md rounded-md">

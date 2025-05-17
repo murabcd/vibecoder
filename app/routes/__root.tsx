@@ -55,7 +55,6 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
             )`}
         </ScriptOnce>
         {children}
-
         <Scripts />
       </body>
     </html>
