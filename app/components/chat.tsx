@@ -261,7 +261,7 @@ export default function VibeCoderComponent() {
 
   return (
     <div className="flex flex-col h-screen">
-      <Header isListening={isListening} isMuted={isMuted} onToggleMute={toggleMute} />
+      <Header />
 
       <div className="p-2 flex-grow flex flex-col">
         <div
@@ -279,6 +279,8 @@ export default function VibeCoderComponent() {
             stopVoiceSession={stopVoiceSession}
             isGeneratingCode={isGeneratingCode}
             generatedAppCode={generatedAppCode}
+            isMuted={isMuted}
+            onToggleMute={toggleMute}
           />
           {(isGeneratingCode || generatedAppCode) && (
             <CodeViewer

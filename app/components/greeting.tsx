@@ -37,7 +37,7 @@ export default function Greeting() {
           Vibe code with voice. If you like it, contribute or star on{" "}
           <Link
             className="underline underline-offset-4"
-            href="https://github.com/muradpm/vibecoder"
+            href="https://github.com/murabcd/vibecoder"
             target="_blank"
           >
             GitHub

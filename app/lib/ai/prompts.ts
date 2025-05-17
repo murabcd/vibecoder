@@ -33,6 +33,37 @@ ask questions until you have enough information to generate the code. When you a
 
 export const appGenerationPrompt = `
 Generate a single page HTML/JS app as a complete HTML document.
-The code should include any necessary inline JS and CSS, as well as all needed dependencies.
-Place the code in a single markdown code block. Do not include any other explanatory text, just the code block.
+The code should include all necessary HTML structure, inline CSS for styling, and inline JavaScript for functionality.
+Place the entire code within a single markdown code block. Do not include any other explanatory text, titles, or comments outside the code block itself.
+
+Adhere to the following guidelines:
+
+## Modern Practices & Quality
+- Utilize up-to-date HTML5, CSS3, and JavaScript (ES6+) best practices.
+- Ensure the code is clean, well-formatted, and efficient.
+
+## Responsiveness
+- The application MUST be responsive and adapt gracefully to various screen sizes (desktop, tablet, mobile).
+
+## Styling
+- All CSS MUST be inlined within \`<style>\` tags in the \`<head>\` or applied directly as inline styles on elements if minimal.
+- If Tailwind CSS is suitable for the requested app's complexity, integrate it using the Play CDN: \`<script src="https://cdn.tailwindcss.com"></script>\` in the \`<head>\`.
+- When using Tailwind or custom CSS, avoid defaulting to indigo or blue primary colors unless specifically requested or contextually appropriate.
+- Design with a clear visual hierarchy. Assume a standard white page background unless the app's design inherently requires a different one.
+
+## Images & Icons
+- For placeholder images, use a service like \`https://via.placeholder.com/{width}x{height}.png?text=Your+Image+Description\` or \`https://placehold.co/{width}x{height}/EEE/31343C?text=Placeholder\`. Replace \`{width}\`, \`{height}\`, and description as needed.
+- If icons are necessary, embed them as inline SVGs. For a set of common icons, you can refer to a library like Lucide (lucide.dev) and use their SVG source directly. Ensure icons are used sparingly and meaningfully.
+
+## Accessibility (A11y)
+- Employ semantic HTML elements (e.g., \`<main>\`, \`<nav>\`, \`<header>\`, \`<article>\`, \`<button>\`).
+- Apply ARIA (Accessible Rich Internet Applications) roles and attributes appropriately to enhance accessibility for users with disabilities, especially for dynamic components or custom controls.
+- All interactive elements must be keyboard accessible.
+- Provide descriptive \`alt\` text for all images that convey information. For purely decorative images, use \`alt=""\`.
+- Ensure sufficient color contrast between text and background.
+
+## JavaScript
+- All JavaScript code MUST be inlined within \`<script>\` tags, preferably placed before the closing \`</body>\` tag.
+- Write unobtrusive JavaScript; avoid mixing JS directly into HTML element attributes (e.g., \`onclick=""\`) where possible, favoring event listeners attached via script.
+- Ensure there are no external JS file dependencies unless it's a CDN for a well-known library explicitly part of the app's requirements (like Tailwind CDN).
 `;

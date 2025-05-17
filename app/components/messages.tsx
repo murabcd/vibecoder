@@ -1,9 +1,10 @@
 import React, { useRef, useEffect } from "react";
 
-import { AudioLines, Square, ArrowUp } from "lucide-react";
+import { AudioLines, Square, ArrowUp, Mic, MicOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import StatusBar from "@/components/status-bar";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +14,8 @@ export interface MessagesProps {
   isListening: boolean;
   onToggleListening: () => void;
   status: string;
+  isMuted: boolean;
+  onToggleMute: () => void;
 }
 
 function Messages({
@@ -21,6 +24,8 @@ function Messages({
   isListening,
   onToggleListening,
   status,
+  isMuted,
+  onToggleMute,
 }: MessagesProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -71,26 +76,60 @@ function Messages({
             }
           }}
         />
-        <div className="absolute top-3 right-3 flex items-center gap-1">
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={handleSendMessage}
-            disabled={!inputText.trim() || isListening}
-            className="rounded-full disabled:opacity-50"
-            aria-label="Send message"
-          >
-            <ArrowUp size={20} />
-          </Button>
-          <Button
-            size="icon"
-            variant="outline"
-            onClick={onToggleListening}
-            className="rounded-full"
-            aria-label={isListening ? "Stop listening" : "Start listening"}
-          >
-            {isListening ? <Square size={20} /> : <AudioLines size={20} />}
-          </Button>
+        <div className="absolute bottom-3 left-3">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={onToggleMute}
+                disabled={!isListening}
+                className="rounded-full"
+                aria-label={isMuted ? "Unmute" : "Mute"}
+              >
+                {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{isMuted ? "Unmute" : "Mute"}</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+        <div className="absolute bottom-3 right-3 flex items-center gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={handleSendMessage}
+                disabled={!inputText.trim() || isListening}
+                className="rounded-full disabled:opacity-50"
+                aria-label="Send message"
+              >
+                <ArrowUp size={20} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Send message</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={onToggleListening}
+                className="rounded-full"
+                aria-label={isListening ? "Stop listening" : "Start listening"}
+              >
+                {isListening ? <Square size={20} /> : <AudioLines size={20} />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{isListening ? "Stop listening" : "Start listening"}</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
     </div>

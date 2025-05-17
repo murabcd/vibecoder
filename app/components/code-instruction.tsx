@@ -12,6 +12,8 @@ interface CodeInstructionProps {
   stopVoiceSession: () => void;
   isGeneratingCode: boolean;
   generatedAppCode: string | null;
+  isMuted: boolean;
+  onToggleMute: () => void;
 }
 
 export default function CodeInstruction({
@@ -24,6 +26,8 @@ export default function CodeInstruction({
   stopVoiceSession,
   isGeneratingCode,
   generatedAppCode,
+  isMuted,
+  onToggleMute,
 }: CodeInstructionProps) {
   const handleToggleListening = () => {
     if (isListening) {
@@ -61,6 +65,8 @@ export default function CodeInstruction({
         isListening={isListening}
         onToggleListening={handleToggleListening}
         status={status}
+        isMuted={isMuted}
+        onToggleMute={onToggleMute}
       />
     </div>
   );

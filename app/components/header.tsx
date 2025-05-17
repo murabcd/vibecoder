@@ -3,14 +3,11 @@ import { Mic, MicOff, Terminal } from "lucide-react";
 
 import ModeToggle from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
-interface HeaderProps {
-  isListening: boolean;
-  isMuted: boolean;
-  onToggleMute: () => void;
-}
+interface HeaderProps {}
 
-const Header: React.FC<HeaderProps> = ({ isListening, isMuted, onToggleMute }) => {
+const Header: React.FC<HeaderProps> = () => {
   return (
     <div className="p-5 text-lg font-semibold flex justify-between items-center">
       <div className="flex items-center">
@@ -22,14 +19,6 @@ const Header: React.FC<HeaderProps> = ({ isListening, isMuted, onToggleMute }) =
         </div>
       </div>
       <div className="flex items-center gap-x-2">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={onToggleMute}
-          disabled={!isListening}
-        >
-          {isMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-        </Button>
         <ModeToggle />
       </div>
     </div>
