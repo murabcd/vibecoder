@@ -1,5 +1,6 @@
 import Messages from "@/components/messages";
 import Greeting from "@/components/greeting";
+import { cn } from "@/lib/utils";
 
 interface CodeInstructionProps {
   currentAppDescription: string;
@@ -9,6 +10,8 @@ interface CodeInstructionProps {
   status: string;
   startVoiceSession: () => Promise<void>;
   stopVoiceSession: () => void;
+  isGeneratingCode: boolean;
+  generatedAppCode: string | null;
 }
 
 export default function CodeInstruction({
@@ -19,6 +22,8 @@ export default function CodeInstruction({
   status,
   startVoiceSession,
   stopVoiceSession,
+  isGeneratingCode,
+  generatedAppCode,
 }: CodeInstructionProps) {
   const handleToggleListening = () => {
     if (isListening) {
@@ -28,9 +33,18 @@ export default function CodeInstruction({
     }
   };
 
+  const isActive = isGeneratingCode || generatedAppCode;
+
   return (
-    <div className="w-full md:w-[400px] p-4 flex flex-col gap-4">
-      <div>
+    <div
+      className={cn(
+        "flex flex-col h-full justify-between",
+        isActive
+          ? "w-full md:w-[400px] px-2 pb-4 md:pb-6"
+          : "w-full md:max-w-3xl px-4 pb-4 md:pb-6"
+      )}
+    >
+      <div className={cn(!isActive && "pt-48")}>
         {currentAppDescription ? (
           <div className="p-3 min-h-[100px] text-sm overflow-auto">
             {currentAppDescription}

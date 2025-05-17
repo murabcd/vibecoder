@@ -1,15 +1,6 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { generateUUID } from "@/lib/utils";
+import { createFileRoute } from "@tanstack/react-router";
+import VibeCoderComponent from "@/components/chat";
 
 export const Route = createFileRoute("/")({
-  component: () => null,
-  beforeLoad: () => {
-    const uuid = generateUUID();
-    throw redirect({
-      to: "/chat",
-      params: {
-        id: uuid,
-      },
-    });
-  },
+  component: VibeCoderComponent,
 });

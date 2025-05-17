@@ -7,6 +7,8 @@ import {
   ScriptOnce,
 } from "@tanstack/react-router";
 
+import { Toaster } from "@/components/ui/sonner";
+
 import appCss from "@/styles/app.css?url";
 
 export const Route = createRootRoute({
@@ -22,12 +24,18 @@ export const Route = createRootRoute({
       {
         title: "VibeCoder",
       },
+      {
+        name: "author",
+        content: "github.com/murabcd",
+      },
+      {
+        name: "keywords",
+        content: "vibecoder, ai, voice, coder",
+      },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
     ],
   }),
   component: RootComponent,
@@ -43,7 +51,7 @@ function RootComponent() {
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html suppressHydrationWarning={true}>
+    <html suppressHydrationWarning lang="en">
       <head>
         <HeadContent />
       </head>
@@ -55,6 +63,7 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
             )`}
         </ScriptOnce>
         {children}
+        <Toaster />
         <Scripts />
       </body>
     </html>

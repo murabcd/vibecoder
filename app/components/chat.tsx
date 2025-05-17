@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useState, useRef, useEffect, useCallback } from "react";
 
@@ -94,15 +93,12 @@ const generateAppOnServer = createServerFn({ method: "POST" })
     }
   });
 
-export const Route = createFileRoute("/chat")({
-  component: VibeCoderComponent,
-});
-
-function VibeCoderComponent() {
-  const [status, setStatus] = useState("Ready.");
+export default function VibeCoderComponent() {
+  const [status, setStatus] = useState("Click on the voice button to start.");
   const [currentAppDescription, setCurrentAppDescription] = useState("");
   const [followUpText, setFollowUpText] = useState("");
   const [generatedAppCode, setGeneratedAppCode] = useState<string | null>(null);
+  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
   const [displayMode, setDisplayMode] = useState<"preview" | "code">("preview");
 
   const [isListening, setIsListening] = useState(false);
@@ -116,18 +112,21 @@ function VibeCoderComponent() {
       setStatus("App description is empty, cannot generate.");
       return;
     }
-    setStatus("Generating app code...");
+    setStatus("Generating the code...");
+    setIsGeneratingCode(true);
     setGeneratedAppCode(null);
     setFollowUpText("");
     if (iframeRef.current) iframeRef.current.src = "about:blank";
     try {
       const code = await generateAppOnServer({ data: description });
       setGeneratedAppCode(code);
-      setStatus("App generated successfully!");
+      setStatus("Generated!");
     } catch (error) {
       console.error("Failed to generate app:", error);
       const msg = error instanceof Error ? error.message : "Unknown error";
       setStatus(`Error generating app: ${msg}`);
+    } finally {
+      setIsGeneratingCode(false);
     }
   }, []);
 
@@ -265,7 +264,11 @@ function VibeCoderComponent() {
       <Header isListening={isListening} isMuted={isMuted} onToggleMute={toggleMute} />
 
       <div className="p-2 flex-grow flex flex-col">
-        <div className="flex flex-1 overflow-hidden gap-1">
+        <div
+          className={`flex flex-1 overflow-hidden ${
+            isGeneratingCode || generatedAppCode ? "gap-2" : "justify-center"
+          }`}
+        >
           <CodeInstruction
             currentAppDescription={currentAppDescription}
             followUpText={followUpText}
@@ -274,13 +277,18 @@ function VibeCoderComponent() {
             status={status}
             startVoiceSession={startVoiceSession}
             stopVoiceSession={stopVoiceSession}
-          />
-          <CodeViewer
-            displayMode={displayMode}
-            setDisplayMode={setDisplayMode}
+            isGeneratingCode={isGeneratingCode}
             generatedAppCode={generatedAppCode}
-            iframeRef={iframeRef}
           />
+          {(isGeneratingCode || generatedAppCode) && (
+            <CodeViewer
+              displayMode={displayMode}
+              setDisplayMode={setDisplayMode}
+              generatedAppCode={generatedAppCode}
+              isGeneratingCode={isGeneratingCode}
+              iframeRef={iframeRef}
+            />
+          )}
         </div>
       </div>
       <audio ref={audioRef} style={{ display: "none" }} />

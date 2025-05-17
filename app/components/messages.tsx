@@ -4,6 +4,8 @@ import { AudioLines, Square, ArrowUp } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import StatusBar from "@/components/status-bar";
+import { cn } from "@/lib/utils";
 
 export interface MessagesProps {
   inputText: string;
@@ -24,9 +26,12 @@ function Messages({
 
   const adjustTextareaHeight = () => {
     if (textareaRef.current) {
+      const minPixelHeight = 98;
       textareaRef.current.style.height = "auto";
+      const scrollBasedHeight = textareaRef.current.scrollHeight;
+      const targetHeight = Math.max(minPixelHeight, scrollBasedHeight);
       const maxHeight = window.innerHeight * 0.5;
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, maxHeight)}px`;
+      textareaRef.current.style.height = `${Math.min(targetHeight, maxHeight)}px`;
     }
   };
 
@@ -41,23 +46,24 @@ function Messages({
   const handleSendMessage = () => {
     if (inputText.trim()) {
       console.log("Sending message:", inputText);
+      // Implement actual message sending logic here if needed
     }
   };
 
   return (
-    <div className="flex flex-col gap-3 h-full">
-      <div className="flex-grow"></div>
+    <div className="flex flex-col gap-0">
+      {status && <StatusBar status={status} />}
 
       <div className="relative">
         <Textarea
           ref={textareaRef}
           id="followUpInputArea"
-          className="w-full resize-none overflow-y-auto rounded-2xl text-sm bg-muted pr-24 dark:border-zinc-700 border border-input"
+          className="w-full resize-none overflow-y-auto text-sm bg-muted pr-24 dark:border-zinc-700 border border-input rounded-2xl min-h-[98px]"
           placeholder="Ask a follow up..."
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           readOnly={isListening}
-          rows={3}
+          rows={4}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
               e.preventDefault();
@@ -87,11 +93,6 @@ function Messages({
           </Button>
         </div>
       </div>
-      {status && (
-        <p className="mt-1 text-xs text-muted-foreground italic text-center">
-          Status: {status}
-        </p>
-      )}
     </div>
   );
 }
