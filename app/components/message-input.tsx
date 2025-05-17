@@ -16,6 +16,7 @@ export interface MessagesProps {
   status: string;
   isMuted: boolean;
   onToggleMute: () => void;
+  onSendMessage: (message: string) => void;
 }
 
 function MessageInput({
@@ -26,6 +27,7 @@ function MessageInput({
   status,
   isMuted,
   onToggleMute,
+  onSendMessage,
 }: MessagesProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -50,8 +52,8 @@ function MessageInput({
 
   const handleSendMessage = () => {
     if (inputText.trim()) {
-      console.log("Sending message:", inputText);
-      // Implement actual message sending logic here if needed
+      onSendMessage(inputText.trim());
+      setInputText("");
     }
   };
 
@@ -67,7 +69,6 @@ function MessageInput({
           placeholder="Ask a follow up..."
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          readOnly={isListening}
           rows={4}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -102,7 +103,7 @@ function MessageInput({
                 size="icon"
                 variant="outline"
                 onClick={handleSendMessage}
-                disabled={!inputText.trim() || isListening}
+                disabled={!inputText.trim()}
                 className="rounded-full disabled:opacity-50"
                 aria-label="Send message"
               >

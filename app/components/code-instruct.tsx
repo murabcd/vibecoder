@@ -14,6 +14,7 @@ interface CodeInstructProps {
   generatedAppCode: string | null;
   isMuted: boolean;
   onToggleMute: () => void;
+  onSendMessage: (message: string) => void;
 }
 
 export default function CodeInstruct({
@@ -28,6 +29,7 @@ export default function CodeInstruct({
   generatedAppCode,
   isMuted,
   onToggleMute,
+  onSendMessage,
 }: CodeInstructProps) {
   const handleToggleListening = () => {
     if (isListening) {
@@ -67,6 +69,7 @@ export default function CodeInstruct({
         status={status}
         isMuted={isMuted}
         onToggleMute={onToggleMute}
+        onSendMessage={onSendMessage}
       />
     </div>
   );

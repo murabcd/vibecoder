@@ -2,7 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { useState, useRef, useEffect, useCallback } from "react";
 
 import { Session } from "@/lib/session";
-import { vibeCoderPrompt, appGenerationPrompt } from "@/lib/ai/prompts";
+
+import { useVoiceSession } from "@/hooks/use-voice-session";
+
+import {
+  vibeCoderPrompt,
+  appGenerationPrompt,
+  appRefinemenPrompt,
+} from "@/lib/ai/prompts";
 import { getModelId, modelChat, modelRealtimeMini } from "@/lib/ai/models";
 
 import Header from "@/components/header";
@@ -93,8 +100,8 @@ const generateAppOnServer = createServerFn({ method: "POST" })
     }
   });
 
-export default function VibeCoderComponent() {
-  const [status, setStatus] = useState("Click on the voice button to start.");
+export default function VibeCoder() {
+  const [status, setStatus] = useState("Click the voice button to start coding.");
   const [currentAppDescription, setCurrentAppDescription] = useState("");
   const [followUpText, setFollowUpText] = useState("");
   const [generatedAppCode, setGeneratedAppCode] = useState<string | null>(null);
@@ -109,10 +116,10 @@ export default function VibeCoderComponent() {
 
   const triggerAppGeneration = useCallback(async (description: string) => {
     if (!description.trim()) {
-      setStatus("App description is empty, cannot generate.");
+      setStatus("App description cannot be empty.");
       return;
     }
-    setStatus("Generating the code...");
+    setStatus("Generating your app...");
     setIsGeneratingCode(true);
     setGeneratedAppCode(null);
     setFollowUpText("");
@@ -120,7 +127,7 @@ export default function VibeCoderComponent() {
     try {
       const code = await generateAppOnServer({ data: description });
       setGeneratedAppCode(code);
-      setStatus("Generated!");
+      setStatus("App generated successfully! Previewing now.");
     } catch (error) {
       console.error("Failed to generate app:", error);
       const msg = error instanceof Error ? error.message : "Unknown error";
@@ -130,123 +137,96 @@ export default function VibeCoderComponent() {
     }
   }, []);
 
-  const startVoiceSession = async () => {
-    if (!OPENAI_API_KEY) {
-      alert(
-        "OpenAI API Key is not configured. Please set VITE_OPENAI_API_KEY in your .env file or an equivalent setup."
+  const handleStatusUpdate = useCallback((newStatus: string) => {
+    setStatus(newStatus);
+  }, []);
+
+  const handleTranscriptReceived = useCallback((transcript: string, isFinal: boolean) => {
+    if (isFinal && transcript) {
+      setCurrentAppDescription((prev) => (prev + transcript + " ").trim());
+    } else if (transcript) {
+    }
+  }, []);
+
+  const handleFunctionCallArguments = useCallback(
+    (name: string, args: any) => {
+      if (name === "create_app") {
+        const description = args.description;
+        if (description) {
+          setCurrentAppDescription(description);
+          setStatus("Received app description. Generating your app...");
+          triggerAppGeneration(description);
+        }
+      } else {
+        console.warn("Received unhandled function call from AI:", name, args);
+      }
+    },
+    [triggerAppGeneration]
+  );
+
+  const handleVoiceConnectionStateChange = useCallback(
+    (state: RTCPeerConnectionState) => {
+      setStatus(
+        (prevStatus) =>
+          `Voice connection: ${state}. ${prevStatus.replace(/^Voice connection: [^.]+\. /, "")}`
       );
-      setStatus("Error: API Key not configured.");
+    },
+    []
+  );
+
+  const handleVoiceError = useCallback((error: any) => {
+    const msg = error instanceof Error ? error.message : "Unknown voice error";
+    setStatus(
+      (prevStatus) =>
+        `Voice Error: ${msg}. ${prevStatus.replace(/^Voice Error: [^.]+\. /, "")}`
+    );
+  }, []);
+
+  const {
+    isListening: voiceSessionIsListening,
+    isMuted: voiceSessionIsMuted,
+    startListening,
+    stopListening,
+    toggleMute,
+    audioRef: voiceSessionAudioRef,
+  } = useVoiceSession({
+    openAIApiKey: OPENAI_API_KEY,
+    sessionParams: vibeCoderSessionParams,
+    onStatusUpdate: handleStatusUpdate,
+    onTranscriptReceived: handleTranscriptReceived,
+    onFunctionCallArguments: handleFunctionCallArguments,
+    onConnectionStateChange: handleVoiceConnectionStateChange,
+    onError: handleVoiceError,
+  });
+
+  const handleFollowUpSubmit = async (message: string) => {
+    if (!generatedAppCode) {
+      setStatus("Please generate an app first before refining.");
       return;
     }
-    if (sessionRef.current) return;
+    if (!message.trim()) {
+      setStatus("Follow-up instruction cannot be empty.");
+      return;
+    }
+
+    setStatus("Refining your app based on instructions...");
+    setIsGeneratingCode(true);
+
+    const refinementDescription = appRefinemenPrompt(generatedAppCode, message);
 
     try {
-      setStatus("Initializing audio stream...");
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-      setStatus("Starting voice session...");
-      setCurrentAppDescription("");
-      const newSession = new Session(OPENAI_API_KEY);
-      sessionRef.current = newSession;
-
-      newSession.onopen = () => {
-        setStatus("Voice session connected. Listening for app description...");
-        setIsListening(true);
-        newSession.sendMessage({ type: "response.create" });
-      };
-
-      newSession.onmessage = (msg: any) => {
-        console.log("Session message:", msg);
-        if (msg.type === "transcript") {
-          if (msg.transcript && msg.is_final) {
-            setCurrentAppDescription((prev) => (prev + msg.transcript + " ").trim());
-          } else if (msg.transcript) {
-          }
-        }
-        if (
-          msg.type === "response.function_call_arguments.done" &&
-          msg.name === "create_app"
-        ) {
-          try {
-            const args = JSON.parse(msg.arguments);
-            const description = args.description;
-            if (description) {
-              setCurrentAppDescription(description);
-              setStatus("Received app description from AI, generating...");
-              triggerAppGeneration(description);
-            }
-          } catch (e) {
-            console.error("Error parsing function call arguments:", e);
-            setStatus("Error processing AI command.");
-          }
-        }
-      };
-
-      newSession.ontrack = (e: RTCTrackEvent) => {
-        console.log("Audio track received from session");
-        if (!audioRef.current) {
-          audioRef.current = new Audio();
-        }
-        if (e.streams && e.streams[0]) {
-          audioRef.current.srcObject = e.streams[0];
-          audioRef.current
-            .play()
-            .catch((err) => console.error("Error playing AI audio:", err));
-        }
-      };
-
-      newSession.onerror = (err: any) => {
-        console.error("Session error:", err);
-        setStatus(`Voice Error: ${err.message || "Unknown error"}`);
-        stopVoiceSession();
-      };
-
-      newSession.onconnectionstatechange = (state: RTCPeerConnectionState) => {
-        console.log("Connection state:", state);
-        setStatus(`Voice connection: ${state}`);
-        if (state === "failed" || state === "closed" || state === "disconnected") {
-          stopVoiceSession();
-        }
-      };
-
-      await newSession.start(stream, vibeCoderSessionParams);
+      const refinedCode = await generateAppOnServer({ data: refinementDescription });
+      setGeneratedAppCode(refinedCode);
+      setStatus("App refined successfully! Previewing updates.");
     } catch (error) {
-      console.error("Failed to start voice session:", error);
+      console.error("Failed to refine app using generateAppOnServer:", error);
       const msg =
-        error instanceof Error ? error.message : "Unknown error starting voice session";
-      setStatus(`Error: ${msg}`);
-      setIsListening(false);
+        error instanceof Error ? error.message : "Unknown error during refinement";
+      setStatus(`Error refining app: ${msg}`);
+    } finally {
+      setIsGeneratingCode(false);
     }
   };
-
-  const stopVoiceSession = () => {
-    if (sessionRef.current) {
-      sessionRef.current.stop();
-      sessionRef.current = null;
-    }
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.srcObject = null;
-    }
-    setIsListening(false);
-    setIsMuted(false);
-    setStatus("Voice session stopped. Ready to start.");
-  };
-
-  const toggleMute = () => {
-    if (sessionRef.current) {
-      const newMutedState = !isMuted;
-      sessionRef.current.setMuted(newMutedState);
-      setIsMuted(newMutedState);
-      setStatus(newMutedState ? "Microphone Muted" : "Microphone Unmuted");
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      stopVoiceSession();
-    };
-  }, []);
 
   useEffect(() => {
     if (iframeRef.current) {
@@ -273,14 +253,15 @@ export default function VibeCoderComponent() {
             currentAppDescription={currentAppDescription}
             followUpText={followUpText}
             setFollowUpText={setFollowUpText}
-            isListening={isListening}
+            isListening={voiceSessionIsListening}
             status={status}
-            startVoiceSession={startVoiceSession}
-            stopVoiceSession={stopVoiceSession}
+            startVoiceSession={startListening}
+            stopVoiceSession={stopListening}
             isGeneratingCode={isGeneratingCode}
             generatedAppCode={generatedAppCode}
-            isMuted={isMuted}
+            isMuted={voiceSessionIsMuted}
             onToggleMute={toggleMute}
+            onSendMessage={handleFollowUpSubmit}
           />
           {(isGeneratingCode || generatedAppCode) && (
             <CodePreview
@@ -293,7 +274,7 @@ export default function VibeCoderComponent() {
           )}
         </div>
       </div>
-      <audio ref={audioRef} style={{ display: "none" }} />
+      <audio ref={voiceSessionAudioRef} style={{ display: "none" }} />
     </div>
   );
 }

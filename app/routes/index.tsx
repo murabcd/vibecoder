@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import VibeCoderComponent from "@/components/chat";
+import VibeCoder from "@/components/coder";
 
 export const Route = createFileRoute("/")({
-  component: VibeCoderComponent,
+  component: VibeCoder,
 });
