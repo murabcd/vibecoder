@@ -95,12 +95,12 @@ function Messages({
             </TooltipContent>
           </Tooltip>
         </div>
-        <div className="absolute bottom-3 right-3 flex items-center gap-1">
+        <div className="absolute bottom-3 right-3 flex items-center gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 size="icon"
-                variant="ghost"
+                variant="secondary"
                 onClick={handleSendMessage}
                 disabled={!inputText.trim() || isListening}
                 className="rounded-full disabled:opacity-50"
