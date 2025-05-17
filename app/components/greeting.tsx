@@ -1,3 +1,5 @@
+import { Link } from "@tanstack/react-router";
+
 import { motion } from "framer-motion";
 
 export default function Greeting() {
@@ -23,6 +25,25 @@ export default function Greeting() {
         className="text-2xl text-zinc-500"
       >
         How can I vibe with you?
+      </motion.div>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 10 }}
+        transition={{ delay: 0.7 }}
+        className="mt-4"
+      >
+        <p className="text-sm text-muted-foreground">
+          Vibe code with voice. If you like it, contribute or star on{" "}
+          <Link
+            className="underline underline-offset-4"
+            href="https://github.com/muradpm/vibecoder"
+            target="_blank"
+          >
+            GitHub
+          </Link>
+          .
+        </p>
       </motion.div>
     </div>
   );
