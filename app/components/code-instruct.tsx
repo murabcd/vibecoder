@@ -1,8 +1,8 @@
-import Messages from "@/components/messages";
+import MessageInput from "@/components/message-input";
 import Greeting from "@/components/greeting";
 import { cn } from "@/lib/utils";
 
-interface CodeInstructionProps {
+interface CodeInstructProps {
   currentAppDescription: string;
   followUpText: string;
   setFollowUpText: (text: string) => void;
@@ -16,7 +16,7 @@ interface CodeInstructionProps {
   onToggleMute: () => void;
 }
 
-export default function CodeInstruction({
+export default function CodeInstruct({
   currentAppDescription,
   followUpText,
   setFollowUpText,
@@ -28,7 +28,7 @@ export default function CodeInstruction({
   generatedAppCode,
   isMuted,
   onToggleMute,
-}: CodeInstructionProps) {
+}: CodeInstructProps) {
   const handleToggleListening = () => {
     if (isListening) {
       stopVoiceSession();
@@ -59,7 +59,7 @@ export default function CodeInstruction({
           </div>
         )}
       </div>
-      <Messages
+      <MessageInput
         inputText={followUpText}
         setInputText={setFollowUpText}
         isListening={isListening}

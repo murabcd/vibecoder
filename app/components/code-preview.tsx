@@ -3,7 +3,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import React from "react";
 
-interface CodeViewerProps {
+interface CodePreviewProps {
   displayMode: "preview" | "code";
   setDisplayMode: (mode: "preview" | "code") => void;
   generatedAppCode: string | null;
@@ -11,13 +11,13 @@ interface CodeViewerProps {
   iframeRef: React.RefObject<HTMLIFrameElement | null>;
 }
 
-export default function CodeViewer({
+export default function CodePreview({
   displayMode,
   setDisplayMode,
   generatedAppCode,
   isGeneratingCode,
   iframeRef,
-}: CodeViewerProps) {
+}: CodePreviewProps) {
   return (
     <div className="flex-1 flex flex-col min-w-0">
       <div className="relative h-[calc(100vh-6rem)] w-full border rounded-lg bg-card flex items-center justify-center">

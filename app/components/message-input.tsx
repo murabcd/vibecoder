@@ -18,7 +18,7 @@ export interface MessagesProps {
   onToggleMute: () => void;
 }
 
-function Messages({
+function MessageInput({
   inputText,
   setInputText,
   isListening,
@@ -136,4 +136,4 @@ function Messages({
   );
 }
 
-export default Messages;
+export default MessageInput;

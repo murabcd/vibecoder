@@ -6,8 +6,8 @@ import { vibeCoderPrompt, appGenerationPrompt } from "@/lib/ai/prompts";
 import { getModelId, modelChat, modelRealtimeMini } from "@/lib/ai/models";
 
 import Header from "@/components/header";
-import CodeViewer from "@/components/code-viewer";
-import CodeInstruction from "@/components/code-instruction";
+import CodePreview from "@/components/code-preview";
+import CodeInstruct from "@/components/code-instruct";
 
 const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY || "";
 const API_BASE = "https://api.openai.com/v1";
@@ -269,7 +269,7 @@ export default function VibeCoderComponent() {
             isGeneratingCode || generatedAppCode ? "gap-2" : "justify-center"
           }`}
         >
-          <CodeInstruction
+          <CodeInstruct
             currentAppDescription={currentAppDescription}
             followUpText={followUpText}
             setFollowUpText={setFollowUpText}
@@ -283,7 +283,7 @@ export default function VibeCoderComponent() {
             onToggleMute={toggleMute}
           />
           {(isGeneratingCode || generatedAppCode) && (
-            <CodeViewer
+            <CodePreview
               displayMode={displayMode}
               setDisplayMode={setDisplayMode}
               generatedAppCode={generatedAppCode}
