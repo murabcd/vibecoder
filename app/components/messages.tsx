@@ -100,7 +100,7 @@ function Messages({
             <TooltipTrigger asChild>
               <Button
                 size="icon"
-                variant="secondary"
+                variant="outline"
                 onClick={handleSendMessage}
                 disabled={!inputText.trim() || isListening}
                 className="rounded-full disabled:opacity-50"
@@ -118,7 +118,7 @@ function Messages({
             <TooltipTrigger asChild>
               <Button
                 size="icon"
-                variant="outline"
+                variant="default"
                 onClick={onToggleListening}
                 className="rounded-full"
                 aria-label={isListening ? "Stop listening" : "Start listening"}

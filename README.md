@@ -1,9 +1,9 @@
-<a href="YOUR_APP_URL_HERE">
+<a href="#">
   <h1 align="center">VibeCoder</h1>
 </a>
 
 <p align="center">
-  An Open-source AI Voice Coder Built With Tanstack Start, and OpenAI.
+  Realtime Voice AI Vibe Coder Built With Tanstack Start, and OpenAI.
 </p>
 
 <p align="center">
@@ -32,13 +32,13 @@
 This app utilizes the [OpenAI API](https://openai.com/) for its AI capabilities. It is configured to use the following OpenAI models:
 
 - Model (`gpt-4o-mini-realtime-preview`): Higher quality conversational model with higher latency.
-- Model (`gpt-4o-mini`): General purpose model optimized for code generation.
+- Model (`gpt-4.1`): General purpose model optimized for code generation.
 
 ## Deploy Your Own
 
 You can deploy your own version of VibeCoder to Vercel with one click:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FYOUR_USERNAME%2FVibeCoder&env=CONVEX_DEPLOY_KEY,OPENAI_API_KEY&envDescription=Learn%20more%20about%20how%20to%20get%20the%20API%20Keys%20for%20the%20application&envLink=https%3A%2F%2Fgithub.com%2FYOUR_USERNAME%2FVibeCoder%2Fblob%2Fmain%2F.env.example&demo-title=VibeCoder&demo-description=An%20Open-source%20Realtime%20AI%20Voice%20Agent%20Built%20With%20Tanstack%20Start%2C%20Convex%2C%20and%20OpenAI.&demo-url=YOUR_APP_URL_HERE)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmurabcd%2FVibeCoder&env=CONVEX_DEPLOY_KEY,OPENAI_API_KEY&envDescription=Learn%20more%20about%20how%20to%20get%20the%20API%20Keys%20for%20the%20application&envLink=https%3A%2F%2Fgithub.com%2Fmurabcd%2FVibeCoder%2Fblob%2Fmain%2F.env.example&demo-title=VibeCoder&demo-description=An%20Open-source%20Realtime%20AI%20Voice%20Agent%20Built%20With%20Tanstack%20Start%2C%20Convex%2C%20and%20OpenAI.&demo-url=YOUR_APP_URL_HERE)
 
 ## Running locally
 
