@@ -15,6 +15,7 @@ import { getModelId, modelChat, modelRealtimeMini } from "@/lib/ai/models";
 import Header from "@/components/header";
 import CodePreview from "@/components/code-preview";
 import CodeInstruct from "@/components/code-instruct";
+import { ConsoleOutput } from "@/components/console";
 
 const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY || "";
 const API_BASE = "https://api.openai.com/v1";
@@ -107,35 +108,69 @@ export default function VibeCoder() {
   const [generatedAppCode, setGeneratedAppCode] = useState<string | null>(null);
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
   const [displayMode, setDisplayMode] = useState<"preview" | "code">("preview");
+  const [error, setError] = useState<string | null>(null);
 
   const [isListening, setIsListening] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const sessionRef = useRef<Session | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [consoleOutputs, setConsoleOutputs] = useState<Array<ConsoleOutput>>([]);
 
-  const triggerAppGeneration = useCallback(async (description: string) => {
-    if (!description.trim()) {
-      setStatus("App description cannot be empty.");
-      return;
-    }
-    setStatus("Generating your app...");
-    setIsGeneratingCode(true);
-    setGeneratedAppCode(null);
-    setFollowUpText("");
-    if (iframeRef.current) iframeRef.current.src = "about:blank";
-    try {
-      const code = await generateAppOnServer({ data: description });
-      setGeneratedAppCode(code);
-      setStatus("App generated successfully! Previewing now.");
-    } catch (error) {
-      console.error("Failed to generate app:", error);
-      const msg = error instanceof Error ? error.message : "Unknown error";
-      setStatus(`Error generating app: ${msg}`);
-    } finally {
-      setIsGeneratingCode(false);
-    }
+  const appendToConsole = useCallback(
+    (
+      type: ConsoleOutput["contents"][0]["type"],
+      value: string,
+      consoleStatus: ConsoleOutput["status"] = "completed"
+    ) => {
+      setConsoleOutputs((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          status: consoleStatus,
+          contents: [{ type, value }],
+        },
+      ]);
+    },
+    []
+  );
+
+  const handleClearConsole = useCallback(() => {
+    setConsoleOutputs([]);
   }, []);
+
+  const triggerAppGeneration = useCallback(
+    async (description: string) => {
+      if (!description.trim()) {
+        setStatus("App description cannot be empty.");
+        appendToConsole("error", "App description cannot be empty.", "failed");
+        return;
+      }
+      setStatus("Generating your app...");
+      setIsGeneratingCode(true);
+      setGeneratedAppCode(null);
+      setFollowUpText("");
+      setError(null);
+      if (iframeRef.current) iframeRef.current.src = "about:blank";
+      appendToConsole("info", "App generation initiated.");
+
+      try {
+        const code = await generateAppOnServer({ data: description });
+        setGeneratedAppCode(code);
+        setStatus("App generated successfully! Previewing now.");
+        appendToConsole("info", "App generated successfully.");
+      } catch (e) {
+        console.error("Failed to generate app:", e);
+        const msg = e instanceof Error ? e.message : "Unknown error";
+        setStatus(`Error generating app: ${msg}`);
+        setError(msg);
+        appendToConsole("error", `Error generating app: ${msg}`, "failed");
+      } finally {
+        setIsGeneratingCode(false);
+      }
+    },
+    [appendToConsole]
+  );
 
   const handleStatusUpdate = useCallback((newStatus: string) => {
     setStatus(newStatus);
@@ -174,13 +209,17 @@ export default function VibeCoder() {
     []
   );
 
-  const handleVoiceError = useCallback((error: any) => {
-    const msg = error instanceof Error ? error.message : "Unknown voice error";
-    setStatus(
-      (prevStatus) =>
-        `Voice Error: ${msg}. ${prevStatus.replace(/^Voice Error: [^.]+\. /, "")}`
-    );
-  }, []);
+  const handleVoiceError = useCallback(
+    (e: any) => {
+      const msg = e instanceof Error ? e.message : "Unknown voice error";
+      setStatus(
+        (prevStatus) =>
+          `Voice Error: ${msg}. ${prevStatus.replace(/^Voice Error: [^.]+\. /, "")}`
+      );
+      appendToConsole("error", `Voice Error: ${msg}`, "failed");
+    },
+    [appendToConsole]
+  );
 
   const {
     isListening: voiceSessionIsListening,
@@ -202,15 +241,19 @@ export default function VibeCoder() {
   const handleFollowUpSubmit = async (message: string) => {
     if (!generatedAppCode) {
       setStatus("Please generate an app first before refining.");
+      appendToConsole("error", "Cannot refine: No app generated yet.", "failed");
       return;
     }
     if (!message.trim()) {
       setStatus("Follow-up instruction cannot be empty.");
+      appendToConsole("error", "Follow-up instruction cannot be empty.", "failed");
       return;
     }
 
     setStatus("Refining your app based on instructions...");
     setIsGeneratingCode(true);
+    setError(null);
+    appendToConsole("info", "Refinement process started.");
 
     const refinementDescription = appRefinemenPrompt(generatedAppCode, message);
 
@@ -218,11 +261,13 @@ export default function VibeCoder() {
       const refinedCode = await generateAppOnServer({ data: refinementDescription });
       setGeneratedAppCode(refinedCode);
       setStatus("App refined successfully! Previewing updates.");
-    } catch (error) {
-      console.error("Failed to refine app using generateAppOnServer:", error);
-      const msg =
-        error instanceof Error ? error.message : "Unknown error during refinement";
+      appendToConsole("info", "App refined successfully.");
+    } catch (e) {
+      console.error("Failed to refine app using generateAppOnServer:", e);
+      const msg = e instanceof Error ? e.message : "Unknown error during refinement";
       setStatus(`Error refining app: ${msg}`);
+      setError(msg);
+      appendToConsole("error", `Error refining app: ${msg}`, "failed");
     } finally {
       setIsGeneratingCode(false);
     }
@@ -270,6 +315,9 @@ export default function VibeCoder() {
               generatedAppCode={generatedAppCode}
               isGeneratingCode={isGeneratingCode}
               iframeRef={iframeRef}
+              consoleOutputs={consoleOutputs}
+              setConsoleOutputs={setConsoleOutputs}
+              onClearConsole={handleClearConsole}
             />
           )}
         </div>

@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import StatusBar from "@/components/status-bar";
-import { cn } from "@/lib/utils";
 
 export interface MessagesProps {
   inputText: string;
@@ -77,7 +76,7 @@ function MessageInput({
             }
           }}
         />
-        <div className="absolute bottom-3 left-3">
+        <div className="absolute bottom-3 left-3 flex items-center gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

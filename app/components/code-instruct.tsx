@@ -1,6 +1,7 @@
+import { cn } from "@/lib/utils";
+
 import MessageInput from "@/components/message-input";
 import Greeting from "@/components/greeting";
-import { cn } from "@/lib/utils";
 
 interface CodeInstructProps {
   currentAppDescription: string;
