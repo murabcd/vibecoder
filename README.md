@@ -1,11 +1,13 @@
 <a href="https://vibecoder-oss.vercel.app">
-  <img alt="Realtime Voice AI Vibe Coder Built With Tanstack Start, and OpenAI." src="./public/preview/vibecoder.png">
+  <img alt="Realtime Voice AI Vibe Coder Built With Tanstack Start and OpenAI." src="./public/preview/vibecoder.png">
   <h1 align="center">VibeCoder</h1>  
 </a>
 
 <p align="center">
-  Realtime Voice AI Vibe Coder Built With Tanstack Start, and OpenAI.
+  Realtime Voice AI Vibe Coder Built With Tanstack Start and OpenAI.
 </p>
+
+❗ This project is in very early development and lots of things will change.
 
 <p align="center">
   <a href="#features"><strong>Features</strong></a> ·
@@ -21,7 +23,7 @@
   - File-based routing, type-safe from server to client
   - Built on Vite for a lightning-fast HMR development experience
   - Server-side rendering and client-side hydration
-- [OpenAI](https://openai.com/) Integration
+- [OpenAI](https://openai.com/)
   - Leverages OpenAI's powerful models for chat generation.
   - Direct API calls for text generation and other AI features.
 - [Shadcn/ui](https://ui.shadcn.com)
