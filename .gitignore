@@ -35,6 +35,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 
-# Tanstack Start output
+# tanstack start
 .output/
-.vinxi/
+.tanstack/
