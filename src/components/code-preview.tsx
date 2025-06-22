@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, Dispatch, SetStateAction } from "react";
 
-import { Eye, Code2, Loader2 } from "lucide-react";
+import { Eye, Code2, Loader } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -107,12 +107,12 @@ export default function CodePreview({
   }, [generatedAppCode, displayMode, isCodeReady]);
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 max-h-[calc(100vh-7rem)] border rounded-md bg-card overflow-hidden">
+    <div className="hidden md:flex flex-1 flex-col min-w-0 max-h-[calc(100vh-7rem)] border rounded-md bg-card overflow-hidden">
       <div className="flex flex-col h-full overflow-hidden">
         <div className="flex-grow relative overflow-auto">
           {isGeneratingCode && !generatedAppCode ? (
             <div className="h-full w-full flex flex-col items-center justify-center text-muted-foreground">
-              <Loader2 size={48} className="animate-spin mb-2" />
+              <Loader size={24} className="animate-spin mb-2" />
               <p>Generating...</p>
             </div>
           ) : displayMode === "preview" ? (

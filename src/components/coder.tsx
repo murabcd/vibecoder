@@ -15,6 +15,7 @@ import { getModelId, modelChat, modelRealtimeMini } from "@/lib/ai/models";
 import Header from "@/components/header";
 import CodePreview from "@/components/code-preview";
 import CodeInstruct from "@/components/code-instruct";
+import MobileCodeDrawer from "@/components/mobile-code-drawer";
 import { ConsoleOutput } from "@/components/console";
 
 const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY || "";
@@ -109,6 +110,7 @@ export default function VibeCoder() {
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
   const [displayMode, setDisplayMode] = useState<"preview" | "code">("preview");
   const [error, setError] = useState<string | null>(null);
+  const [isMobileCodeDrawerOpen, setIsMobileCodeDrawerOpen] = useState(false);
 
   const [isListening, setIsListening] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -137,6 +139,14 @@ export default function VibeCoder() {
 
   const handleClearConsole = useCallback(() => {
     setConsoleOutputs([]);
+  }, []);
+
+  const handleOpenMobileCodeDrawer = useCallback(() => {
+    setIsMobileCodeDrawerOpen(true);
+  }, []);
+
+  const handleCloseMobileCodeDrawer = useCallback(() => {
+    setIsMobileCodeDrawerOpen(false);
   }, []);
 
   const triggerAppGeneration = useCallback(
@@ -286,7 +296,10 @@ export default function VibeCoder() {
 
   return (
     <div className="flex flex-col h-screen">
-      <Header />
+      <Header
+        onOpenMobileCodeDrawer={handleOpenMobileCodeDrawer}
+        hasGeneratedCode={!!generatedAppCode}
+      />
 
       <div className="p-2 flex-grow flex flex-col">
         <div
@@ -322,6 +335,14 @@ export default function VibeCoder() {
           )}
         </div>
       </div>
+
+      {/* Mobile Code Drawer */}
+      <MobileCodeDrawer
+        isOpen={isMobileCodeDrawerOpen}
+        onClose={handleCloseMobileCodeDrawer}
+        generatedAppCode={generatedAppCode}
+      />
+
       <audio ref={voiceSessionAudioRef} style={{ display: "none" }} />
     </div>
   );
