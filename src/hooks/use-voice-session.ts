@@ -2,165 +2,173 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { Session } from "@/lib/session";
 
 interface VibeCoderSessionParams {
-  instructions: string;
-  model: string;
-  voice: string;
-  tools: Array<{
-    type: string;
-    name: string;
-    description: string;
-    parameters: any;
-  }>;
+	instructions: string;
+	model: string;
+	voice: string;
+	tools: Array<{
+		type: string;
+		name: string;
+		description: string;
+		parameters: unknown;
+	}>;
 }
 
 interface UseVoiceSessionProps {
-  openAIApiKey: string;
-  sessionParams: VibeCoderSessionParams;
-  onStatusUpdate: (status: string) => void;
-  onTranscriptReceived: (transcript: string, isFinal: boolean) => void;
-  onFunctionCallArguments: (name: string, args: any) => void;
-  onConnectionStateChange: (state: RTCPeerConnectionState) => void;
-  onError: (error: any) => void;
+	openAIApiKey: string;
+	sessionParams: VibeCoderSessionParams;
+	onStatusUpdate: (status: string) => void;
+	onTranscriptReceived: (transcript: string, isFinal: boolean) => void;
+	onFunctionCallArguments: (name: string, args: unknown) => void;
+	onConnectionStateChange: (state: RTCPeerConnectionState) => void;
+	onError: (error: unknown) => void;
 }
 
 export function useVoiceSession({
-  openAIApiKey,
-  sessionParams,
-  onStatusUpdate,
-  onTranscriptReceived,
-  onFunctionCallArguments,
-  onConnectionStateChange,
-  onError,
+	openAIApiKey,
+	sessionParams,
+	onStatusUpdate,
+	onTranscriptReceived,
+	onFunctionCallArguments,
+	onConnectionStateChange,
+	onError,
 }: UseVoiceSessionProps) {
-  const [isListening, setIsListening] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const sessionRef = useRef<Session | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+	const [isListening, setIsListening] = useState(false);
+	const [isMuted, setIsMuted] = useState(false);
+	const sessionRef = useRef<Session | null>(null);
+	const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const stopSessionInternal = useCallback(() => {
-    if (sessionRef.current) {
-      sessionRef.current.stop();
-      sessionRef.current = null;
-    }
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.srcObject = null;
-    }
-    setIsListening(false);
-    setIsMuted(false);
-    onStatusUpdate("Voice session stopped. Ready to start.");
-  }, [onStatusUpdate]);
+	const stopSessionInternal = useCallback(() => {
+		if (sessionRef.current) {
+			sessionRef.current.stop();
+			sessionRef.current = null;
+		}
+		if (audioRef.current) {
+			audioRef.current.pause();
+			audioRef.current.srcObject = null;
+		}
+		setIsListening(false);
+		setIsMuted(false);
+		onStatusUpdate("Voice session stopped. Ready to start.");
+	}, [onStatusUpdate]);
 
-  const startListening = useCallback(async () => {
-    if (!openAIApiKey) {
-      onError(new Error("OpenAI API Key is not configured."));
-      onStatusUpdate("Error: API Key not configured.");
-      return;
-    }
-    if (sessionRef.current) return;
+	const startListening = useCallback(async () => {
+		if (!openAIApiKey) {
+			onError(new Error("OpenAI API Key is not configured."));
+			onStatusUpdate("Error: API Key not configured.");
+			return;
+		}
+		if (sessionRef.current) return;
 
-    try {
-      onStatusUpdate("Initializing audio stream...");
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+		try {
+			onStatusUpdate("Initializing audio stream...");
+			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      onStatusUpdate("Starting voice session...");
-      const newSession = new Session(openAIApiKey);
-      sessionRef.current = newSession;
+			onStatusUpdate("Starting voice session...");
+			const newSession = new Session(openAIApiKey);
+			sessionRef.current = newSession;
 
-      newSession.onopen = () => {
-        onStatusUpdate("Voice session connected. Listening...");
-        setIsListening(true);
-        newSession.sendMessage({ type: "response.create" });
-      };
+			newSession.onopen = () => {
+				onStatusUpdate("Voice session connected. Listening...");
+				setIsListening(true);
+				newSession.sendMessage({ type: "response.create" });
+			};
 
-      newSession.onmessage = (msg: any) => {
-        console.log("Session message from hook:", msg);
-        if (msg.type === "transcript") {
-          onTranscriptReceived(msg.transcript || "", msg.is_final || false);
-        }
-        if (msg.type === "response.function_call_arguments.done" && msg.name) {
-          try {
-            const args = JSON.parse(msg.arguments);
-            onFunctionCallArguments(msg.name, args);
-          } catch (e) {
-            console.error("Error parsing function call arguments in hook:", e);
-            onError(new Error("Error processing AI command arguments."));
-          }
-        }
-      };
+			type SessionMessage = {
+				type: string;
+				is_final?: boolean;
+				transcript?: string;
+				name?: string;
+				arguments?: string;
+			};
 
-      newSession.ontrack = (e: RTCTrackEvent) => {
-        console.log("Audio track received from session in hook");
-        if (!audioRef.current) {
-          audioRef.current = new Audio();
-        }
-        if (e.streams && e.streams[0]) {
-          audioRef.current.srcObject = e.streams[0];
-          audioRef.current.play().catch((err) => {
-            console.error("Error playing AI audio in hook:", err);
-            onError(err);
-          });
-        }
-      };
+			newSession.onmessage = (msg: SessionMessage) => {
+				if (msg.type === "transcript") {
+					onTranscriptReceived(msg.transcript || "", msg.is_final || false);
+				}
+				if (msg.type === "response.function_call_arguments.done" && msg.name) {
+					try {
+						const args = JSON.parse(msg.arguments as string);
+						onFunctionCallArguments(msg.name, args);
+					} catch (_e) {
+						onError(new Error("Error processing AI command arguments."));
+					}
+				}
+			};
 
-      newSession.onerror = (err: any) => {
-        console.error("Session error in hook:", err);
-        onError(err);
-        stopSessionInternal();
-      };
+			newSession.ontrack = (e: RTCTrackEvent) => {
+				if (!audioRef.current) {
+					audioRef.current = new Audio();
+				}
+				if (e.streams?.[0]) {
+					audioRef.current.srcObject = e.streams[0];
+					audioRef.current.play().catch((err) => {
+						onError(err);
+					});
+				}
+			};
 
-      newSession.onconnectionstatechange = (state: RTCPeerConnectionState) => {
-        onConnectionStateChange(state);
-        if (state === "failed" || state === "closed" || state === "disconnected") {
-          stopSessionInternal();
-        }
-      };
+			newSession.onerror = (err: unknown) => {
+				onError(err);
+				stopSessionInternal();
+			};
 
-      await newSession.start(stream, sessionParams);
-    } catch (error) {
-      console.error("Failed to start voice session in hook:", error);
-      const msg =
-        error instanceof Error ? error.message : "Unknown error starting voice session";
-      onStatusUpdate(`Error: ${msg}`);
-      setIsListening(false);
-      onError(error);
-    }
-  }, [
-    openAIApiKey,
-    sessionParams,
-    onStatusUpdate,
-    onTranscriptReceived,
-    onFunctionCallArguments,
-    onConnectionStateChange,
-    onError,
-    stopSessionInternal,
-  ]);
+			newSession.onconnectionstatechange = (state: RTCPeerConnectionState) => {
+				onConnectionStateChange(state);
+				if (
+					state === "failed" ||
+					state === "closed" ||
+					state === "disconnected"
+				) {
+					stopSessionInternal();
+				}
+			};
 
-  const stopListening = useCallback(() => {
-    stopSessionInternal();
-  }, [stopSessionInternal]);
+			await newSession.start(stream, sessionParams);
+		} catch (error) {
+			const msg =
+				error instanceof Error
+					? error.message
+					: "Unknown error starting voice session";
+			onStatusUpdate(`Error: ${msg}`);
+			setIsListening(false);
+			onError(error);
+		}
+	}, [
+		openAIApiKey,
+		sessionParams,
+		onStatusUpdate,
+		onTranscriptReceived,
+		onFunctionCallArguments,
+		onConnectionStateChange,
+		onError,
+		stopSessionInternal,
+	]);
 
-  const toggleMute = useCallback(() => {
-    if (sessionRef.current && isListening) {
-      const newMutedState = !isMuted;
-      sessionRef.current.setMuted(newMutedState);
-      setIsMuted(newMutedState);
-      onStatusUpdate(newMutedState ? "Microphone muted" : "Microphone unmuted");
-    }
-  }, [isMuted, isListening, onStatusUpdate]);
+	const stopListening = useCallback(() => {
+		stopSessionInternal();
+	}, [stopSessionInternal]);
 
-  useEffect(() => {
-    return () => {
-      stopSessionInternal();
-    };
-  }, [stopSessionInternal]);
+	const toggleMute = useCallback(() => {
+		if (sessionRef.current && isListening) {
+			const newMutedState = !isMuted;
+			sessionRef.current.setMuted(newMutedState);
+			setIsMuted(newMutedState);
+			onStatusUpdate(newMutedState ? "Microphone muted" : "Microphone unmuted");
+		}
+	}, [isMuted, isListening, onStatusUpdate]);
 
-  return {
-    isListening,
-    isMuted,
-    startListening,
-    stopListening,
-    toggleMute,
-    audioRef,
-  };
+	useEffect(() => {
+		return () => {
+			stopSessionInternal();
+		};
+	}, [stopSessionInternal]);
+
+	return {
+		isListening,
+		isMuted,
+		startListening,
+		stopListening,
+		toggleMute,
+		audioRef,
+	};
 }

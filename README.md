@@ -26,6 +26,9 @@
 - [OpenAI](https://openai.com/)
   - Leverages OpenAI's powerful models for chat generation.
   - Direct API calls for text generation and other AI features.
+- [Vercel Sandbox](https://vercel.com/docs/vercel-sandbox)
+  - Securely executes untrusted or user-generated code in an isolated environment
+  - Supports safe code execution and live previews for user or AI-generated code
 - [Shadcn/ui](https://ui.shadcn.com)
   - Styling with [Tailwind CSS](https://tailwindcss.com)
   - Component primitives from [Radix UI](https://radix-ui.com) for accessibility and flexibility

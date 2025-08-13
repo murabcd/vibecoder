@@ -38,3 +38,5 @@ yarn-error.log*
 # tanstack start
 .output/
 .tanstack/
+.env*.local
+.nitro/

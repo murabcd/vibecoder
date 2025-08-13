@@ -1,349 +1,380 @@
-import { createServerFn } from "@tanstack/react-start";
-import { useState, useRef, useEffect, useCallback } from "react";
-
-import { Session } from "@/lib/session";
+import { useState, useCallback } from "react";
 
 import { useVoiceSession } from "@/hooks/use-voice-session";
 
-import {
-  vibeCoderPrompt,
-  appGenerationPrompt,
-  appRefinemenPrompt,
-} from "@/lib/ai/prompts";
-import { getModelId, modelChat, modelRealtimeMini } from "@/lib/ai/models";
+import { appRefinemenPrompt } from "@/lib/ai/prompts";
+import { vibeCoderSessionParams, generateAppOnServer } from "@/lib/ai/ai";
 
 import Header from "@/components/header";
 import CodePreview from "@/components/code-preview";
 import CodeInstruct from "@/components/code-instruct";
 import MobileCodeDrawer from "@/components/mobile-code-drawer";
-import { ConsoleOutput } from "@/components/console";
-
-const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY || "";
-const API_BASE = "https://api.openai.com/v1";
-
-const vibeCoderSessionParams = {
-  instructions: vibeCoderPrompt,
-  model: getModelId(modelRealtimeMini),
-  voice: "shimmer",
-  tools: [
-    {
-      type: "function",
-      name: "create_app",
-      description: "Use this function to create a new app with the given description.",
-      parameters: {
-        type: "object",
-        properties: {
-          description: {
-            type: "string",
-            description: "The description of the app to create.",
-          },
-        },
-        required: ["description"],
-      },
-    },
-  ],
-};
-
-const generateAppOnServer = createServerFn({ method: "POST" })
-  .validator((description: string): string => {
-    if (typeof description !== "string" || description.trim() === "") {
-      throw new Error("App description cannot be empty.");
-    }
-    return description;
-  })
-  .handler(async ({ data: appDescription }: { data: string }) => {
-    if (!OPENAI_API_KEY) {
-      throw new Error(
-        "OpenAI API key is not configured. Please set VITE_OPENAI_API_KEY in your .env file."
-      );
-    }
-    const payload = {
-      model: getModelId(modelChat),
-      messages: [
-        { role: "system", content: appGenerationPrompt },
-        { role: "user", content: appDescription },
-      ],
-    };
-    try {
-      const response = await fetch(`${API_BASE}/chat/completions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${OPENAI_API_KEY}`,
-        },
-        body: JSON.stringify(payload),
-      });
-      if (!response.ok) {
-        const errorBody = await response.text();
-        console.error("OpenAI API Error:", response.status, errorBody);
-        throw new Error(`OpenAI API error: ${response.status} - ${errorBody}`);
-      }
-      const data = await response.json();
-      const content =
-        data.choices &&
-        data.choices[0] &&
-        data.choices[0].message &&
-        data.choices[0].message.content;
-      if (!content) {
-        throw new Error("Invalid API response format from OpenAI (no content).");
-      }
-      const regex = /```(?:html)?\n([\s\S]*?)```/;
-      const match = regex.exec(content);
-      const code = match ? match[1].trim() : null;
-      if (!code) {
-        console.error("Could not extract code from API response. Raw content:", content);
-        throw new Error("Could not extract HTML code from OpenAI response.");
-      }
-      return code;
-    } catch (error) {
-      console.error("Error in generateAppOnServer:", error);
-      if (error instanceof Error) throw error;
-      throw new Error("An unexpected error occurred while generating the app.");
-    }
-  });
+import type { ConsoleOutput } from "@/components/console";
+import {
+	getSandboxUrlOnServer,
+	updateSandboxFilesOnServer,
+	initSandboxWithFilesOnServer,
+} from "@/lib/sandbox";
 
 export default function VibeCoder() {
-  const [status, setStatus] = useState("Click the voice button to start coding.");
-  const [currentAppDescription, setCurrentAppDescription] = useState("");
-  const [followUpText, setFollowUpText] = useState("");
-  const [generatedAppCode, setGeneratedAppCode] = useState<string | null>(null);
-  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
-  const [displayMode, setDisplayMode] = useState<"preview" | "code">("preview");
-  const [error, setError] = useState<string | null>(null);
-  const [isMobileCodeDrawerOpen, setIsMobileCodeDrawerOpen] = useState(false);
+	const [status, setStatus] = useState(
+		"Click the voice button to start coding.",
+	);
+	const [currentAppDescription, setCurrentAppDescription] = useState("");
+	const [followUpText, setFollowUpText] = useState("");
+	const [generatedAppCode, setGeneratedAppCode] = useState<string | null>(null);
+	const [isGeneratingCode, setIsGeneratingCode] = useState(false);
+	const [displayMode, setDisplayMode] = useState<"preview" | "code">("preview");
+	// keep error state for potential UI rendering later
+	const [, setError] = useState<string | null>(null);
+	const [isMobileCodeDrawerOpen, setIsMobileCodeDrawerOpen] = useState(false);
+	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+	// store sandboxId to reuse the same sandbox across refinements
+	const [sandboxId, setSandboxId] = useState<string | null>(null);
+	const [generatedFiles, setGeneratedFiles] = useState<
+		Array<{ path: string; content: string }>
+	>([]);
+	const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
 
-  const [isListening, setIsListening] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const sessionRef = useRef<Session | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [consoleOutputs, setConsoleOutputs] = useState<Array<ConsoleOutput>>([]);
+	// managed by the voice session hook
+	const [consoleOutputs, setConsoleOutputs] = useState<Array<ConsoleOutput>>(
+		[],
+	);
 
-  const appendToConsole = useCallback(
-    (
-      type: ConsoleOutput["contents"][0]["type"],
-      value: string,
-      consoleStatus: ConsoleOutput["status"] = "completed"
-    ) => {
-      setConsoleOutputs((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          status: consoleStatus,
-          contents: [{ type, value }],
-        },
-      ]);
-    },
-    []
-  );
+	const appendToConsole = useCallback(
+		(
+			type: ConsoleOutput["contents"][0]["type"],
+			value: string,
+			consoleStatus: ConsoleOutput["status"] = "completed",
+		) => {
+			setConsoleOutputs((prev) => [
+				...prev,
+				{
+					id: Date.now().toString(),
+					status: consoleStatus,
+					contents: [{ type, value }],
+				},
+			]);
+		},
+		[],
+	);
 
-  const handleClearConsole = useCallback(() => {
-    setConsoleOutputs([]);
-  }, []);
+	const handleClearConsole = useCallback(() => {
+		setConsoleOutputs([]);
+	}, []);
 
-  const handleOpenMobileCodeDrawer = useCallback(() => {
-    setIsMobileCodeDrawerOpen(true);
-  }, []);
+	const handleOpenMobileCodeDrawer = useCallback(() => {
+		setIsMobileCodeDrawerOpen(true);
+	}, []);
 
-  const handleCloseMobileCodeDrawer = useCallback(() => {
-    setIsMobileCodeDrawerOpen(false);
-  }, []);
+	const handleCloseMobileCodeDrawer = useCallback(() => {
+		setIsMobileCodeDrawerOpen(false);
+	}, []);
 
-  const triggerAppGeneration = useCallback(
-    async (description: string) => {
-      if (!description.trim()) {
-        setStatus("App description cannot be empty.");
-        appendToConsole("error", "App description cannot be empty.", "failed");
-        return;
-      }
-      setStatus("Generating your app...");
-      setIsGeneratingCode(true);
-      setGeneratedAppCode(null);
-      setFollowUpText("");
-      setError(null);
-      if (iframeRef.current) iframeRef.current.src = "about:blank";
-      appendToConsole("info", "App generation initiated.");
+	const triggerAppGeneration = useCallback(
+		async (description: string) => {
+			if (!description.trim()) {
+				setStatus("App description cannot be empty.");
+				appendToConsole("error", "App description cannot be empty.", "failed");
+				return;
+			}
+			setStatus("Generating your app...");
+			setIsGeneratingCode(true);
+			setGeneratedAppCode(null);
+			setPreviewUrl(null);
+			setFollowUpText("");
+			setError(null);
+			appendToConsole("info", "App generation initiated.");
 
-      try {
-        const code = await generateAppOnServer({ data: description });
-        setGeneratedAppCode(code);
-        setStatus("App generated successfully! Previewing now.");
-        appendToConsole("info", "App generated successfully.");
-      } catch (e) {
-        console.error("Failed to generate app:", e);
-        const msg = e instanceof Error ? e.message : "Unknown error";
-        setStatus(`Error generating app: ${msg}`);
-        setError(msg);
-        appendToConsole("error", `Error generating app: ${msg}`, "failed");
-      } finally {
-        setIsGeneratingCode(false);
-      }
-    },
-    [appendToConsole]
-  );
+			try {
+				const filesObject = await generateAppOnServer({ data: description });
 
-  const handleStatusUpdate = useCallback((newStatus: string) => {
-    setStatus(newStatus);
-  }, []);
+				// Start sandbox creation
+				appendToConsole(
+					"info",
+					"App generated successfully. Launching sandbox...",
+				);
 
-  const handleTranscriptReceived = useCallback((transcript: string, isFinal: boolean) => {
-    if (isFinal && transcript) {
-      setCurrentAppDescription((prev) => (prev + transcript + " ").trim());
-    } else if (transcript) {
-    }
-  }, []);
+				// Create sandbox with files
+				const { url, sandboxId } = await initSandboxWithFilesOnServer({
+					data: filesObject,
+				});
 
-  const handleFunctionCallArguments = useCallback(
-    (name: string, args: any) => {
-      if (name === "create_app") {
-        const description = args.description;
-        if (description) {
-          setCurrentAppDescription(description);
-          setStatus("Received app description. Generating your app...");
-          triggerAppGeneration(description);
-        }
-      } else {
-        console.warn("Received unhandled function call from AI:", name, args);
-      }
-    },
-    [triggerAppGeneration]
-  );
+				// Populate code view with index.html if available; otherwise fallback to JSON
+				setGeneratedFiles(
+					filesObject.files as Array<{ path: string; content: string }>,
+				);
+				const indexHtml = filesObject.files.find((f: { path: string }) =>
+					/(^|\/)index\.html$/i.test(f.path),
+				);
+				if (indexHtml && typeof indexHtml.content === "string") {
+					setGeneratedAppCode(indexHtml.content);
+					setSelectedFilePath(indexHtml.path);
+				} else {
+					setGeneratedAppCode(JSON.stringify(filesObject, null, 2));
+					setSelectedFilePath(filesObject.files?.[0]?.path ?? null);
+				}
+				setPreviewUrl(url);
+				setSandboxId(sandboxId);
+				setStatus("App generated successfully! Previewing now.");
+				appendToConsole("info", `Sandbox ready at ${url}`);
+			} catch (e) {
+				const msg = e instanceof Error ? e.message : "Unknown error";
+				setStatus(`Error generating app: ${msg}`);
+				setError(msg);
+				appendToConsole("error", `Error generating app: ${msg}`, "failed");
+			} finally {
+				setIsGeneratingCode(false);
+			}
+		},
+		[appendToConsole],
+	);
 
-  const handleVoiceConnectionStateChange = useCallback(
-    (state: RTCPeerConnectionState) => {
-      setStatus(
-        (prevStatus) =>
-          `Voice connection: ${state}. ${prevStatus.replace(/^Voice connection: [^.]+\. /, "")}`
-      );
-    },
-    []
-  );
+	const handleStatusUpdate = useCallback((newStatus: string) => {
+		setStatus(newStatus);
+	}, []);
 
-  const handleVoiceError = useCallback(
-    (e: any) => {
-      const msg = e instanceof Error ? e.message : "Unknown voice error";
-      setStatus(
-        (prevStatus) =>
-          `Voice Error: ${msg}. ${prevStatus.replace(/^Voice Error: [^.]+\. /, "")}`
-      );
-      appendToConsole("error", `Voice Error: ${msg}`, "failed");
-    },
-    [appendToConsole]
-  );
+	const handleTranscriptReceived = useCallback(
+		(transcript: string, isFinal: boolean) => {
+			if (isFinal && transcript) {
+				setCurrentAppDescription((prev) => `${prev}${transcript} `.trim());
+			} else if (transcript) {
+			}
+		},
+		[],
+	);
 
-  const {
-    isListening: voiceSessionIsListening,
-    isMuted: voiceSessionIsMuted,
-    startListening,
-    stopListening,
-    toggleMute,
-    audioRef: voiceSessionAudioRef,
-  } = useVoiceSession({
-    openAIApiKey: OPENAI_API_KEY,
-    sessionParams: vibeCoderSessionParams,
-    onStatusUpdate: handleStatusUpdate,
-    onTranscriptReceived: handleTranscriptReceived,
-    onFunctionCallArguments: handleFunctionCallArguments,
-    onConnectionStateChange: handleVoiceConnectionStateChange,
-    onError: handleVoiceError,
-  });
+	const handleFunctionCallArguments = useCallback(
+		(name: string, args: unknown) => {
+			if (name === "create_app") {
+				let description: string | undefined;
+				if (
+					typeof args === "object" &&
+					args !== null &&
+					"description" in args &&
+					typeof (args as { description: unknown }).description === "string"
+				) {
+					description = (args as { description: string }).description;
+				}
+				if (description) {
+					setCurrentAppDescription(description);
+					setStatus("Received app description. Generating your app...");
+					triggerAppGeneration(description);
+				}
+			} else {
+				// Unhandled function call from AI
+			}
+		},
+		[triggerAppGeneration],
+	);
 
-  const handleFollowUpSubmit = async (message: string) => {
-    if (!generatedAppCode) {
-      setStatus("Please generate an app first before refining.");
-      appendToConsole("error", "Cannot refine: No app generated yet.", "failed");
-      return;
-    }
-    if (!message.trim()) {
-      setStatus("Follow-up instruction cannot be empty.");
-      appendToConsole("error", "Follow-up instruction cannot be empty.", "failed");
-      return;
-    }
+	const handleVoiceConnectionStateChange = useCallback(
+		(state: RTCPeerConnectionState) => {
+			setStatus(
+				(prevStatus) =>
+					`Voice connection: ${state}. ${prevStatus.replace(/^Voice connection: [^.]+\. /, "")}`,
+			);
+		},
+		[],
+	);
 
-    setStatus("Refining your app based on instructions...");
-    setIsGeneratingCode(true);
-    setError(null);
-    appendToConsole("info", "Refinement process started.");
+	const handleVoiceError = useCallback(
+		(e: unknown) => {
+			const msg = e instanceof Error ? e.message : "Unknown voice error";
+			setStatus(
+				(prevStatus) =>
+					`Voice Error: ${msg}. ${prevStatus.replace(/^Voice Error: [^.]+\. /, "")}`,
+			);
+			appendToConsole("error", `Voice Error: ${msg}`, "failed");
+		},
+		[appendToConsole],
+	);
 
-    const refinementDescription = appRefinemenPrompt(generatedAppCode, message);
+	const {
+		isListening: voiceSessionIsListening,
+		isMuted: voiceSessionIsMuted,
+		startListening,
+		stopListening,
+		toggleMute,
+		audioRef: voiceSessionAudioRef,
+	} = useVoiceSession({
+		openAIApiKey: import.meta.env.VITE_OPENAI_API_KEY,
+		sessionParams: vibeCoderSessionParams,
+		onStatusUpdate: handleStatusUpdate,
+		onTranscriptReceived: handleTranscriptReceived,
+		onFunctionCallArguments: handleFunctionCallArguments,
+		onConnectionStateChange: handleVoiceConnectionStateChange,
+		onError: handleVoiceError,
+	});
 
-    try {
-      const refinedCode = await generateAppOnServer({ data: refinementDescription });
-      setGeneratedAppCode(refinedCode);
-      setStatus("App refined successfully! Previewing updates.");
-      appendToConsole("info", "App refined successfully.");
-    } catch (e) {
-      console.error("Failed to refine app using generateAppOnServer:", e);
-      const msg = e instanceof Error ? e.message : "Unknown error during refinement";
-      setStatus(`Error refining app: ${msg}`);
-      setError(msg);
-      appendToConsole("error", `Error refining app: ${msg}`, "failed");
-    } finally {
-      setIsGeneratingCode(false);
-    }
-  };
+	const handleFollowUpSubmit = async (message: string) => {
+		if (!generatedAppCode) {
+			setStatus("Please generate an app first before refining.");
+			appendToConsole(
+				"error",
+				"Cannot refine: No app generated yet.",
+				"failed",
+			);
+			return;
+		}
+		if (!message.trim()) {
+			setStatus("Follow-up instruction cannot be empty.");
+			appendToConsole(
+				"error",
+				"Follow-up instruction cannot be empty.",
+				"failed",
+			);
+			return;
+		}
 
-  useEffect(() => {
-    if (iframeRef.current) {
-      if (displayMode === "preview" && generatedAppCode) {
-        iframeRef.current.src =
-          "data:text/html;charset=utf-8," + encodeURIComponent(generatedAppCode);
-      } else if (displayMode === "preview" && !generatedAppCode) {
-        iframeRef.current.src = "about:blank";
-      }
-    }
-  }, [generatedAppCode, displayMode]);
+		setStatus("Refining your app based on instructions...");
+		setIsGeneratingCode(true);
+		setError(null);
+		appendToConsole("info", "Refinement process started.");
 
-  return (
-    <div className="flex flex-col h-screen">
-      <Header
-        onOpenMobileCodeDrawer={handleOpenMobileCodeDrawer}
-        hasGeneratedCode={!!generatedAppCode}
-      />
+		const refinementDescription = appRefinemenPrompt(generatedAppCode, message);
 
-      <div className="p-2 flex-grow flex flex-col">
-        <div
-          className={`flex flex-1 overflow-hidden ${
-            isGeneratingCode || generatedAppCode ? "gap-2" : "justify-center"
-          }`}
-        >
-          <CodeInstruct
-            currentAppDescription={currentAppDescription}
-            followUpText={followUpText}
-            setFollowUpText={setFollowUpText}
-            isListening={voiceSessionIsListening}
-            status={status}
-            startVoiceSession={startListening}
-            stopVoiceSession={stopListening}
-            isGeneratingCode={isGeneratingCode}
-            generatedAppCode={generatedAppCode}
-            isMuted={voiceSessionIsMuted}
-            onToggleMute={toggleMute}
-            onSendMessage={handleFollowUpSubmit}
-          />
-          {(isGeneratingCode || generatedAppCode) && (
-            <CodePreview
-              displayMode={displayMode}
-              setDisplayMode={setDisplayMode}
-              generatedAppCode={generatedAppCode}
-              isGeneratingCode={isGeneratingCode}
-              iframeRef={iframeRef}
-              consoleOutputs={consoleOutputs}
-              setConsoleOutputs={setConsoleOutputs}
-              onClearConsole={handleClearConsole}
-            />
-          )}
-        </div>
-      </div>
+		try {
+			const filesObject = await generateAppOnServer({
+				data: refinementDescription,
+			});
+			setStatus("Launching preview environment...");
+			appendToConsole("info", "App refined successfully. Updating sandbox...");
 
-      {/* Mobile Code Drawer */}
-      <MobileCodeDrawer
-        isOpen={isMobileCodeDrawerOpen}
-        onClose={handleCloseMobileCodeDrawer}
-        generatedAppCode={generatedAppCode}
-      />
+			// Helper to detect preferred port from package.json content
+			const detectPortFromFiles = (
+				files: Array<{ path: string; content: string }>,
+			): number => {
+				const pkg = files.find((f) => /(^|\/)package\.json$/i.test(f.path));
+				if (pkg) {
+					try {
+						const pkgJson = JSON.parse(pkg.content as string) as {
+							dependencies?: Record<string, string>;
+							devDependencies?: Record<string, string>;
+						};
+						const depsBlob = JSON.stringify({
+							...pkgJson.dependencies,
+							...pkgJson.devDependencies,
+						});
+						if (/vite/i.test(depsBlob)) return 5173;
+						if (/next/i.test(depsBlob)) return 3000;
+					} catch {}
+				}
+				return 3000;
+			};
 
-      <audio ref={voiceSessionAudioRef} style={{ display: "none" }} />
-    </div>
-  );
+			let url: string;
+			if (sandboxId) {
+				// Reuse existing sandbox: write files and resolve URL
+				await updateSandboxFilesOnServer({
+					data: {
+						sandboxId,
+						files: filesObject.files as Array<{
+							path: string;
+							content: string;
+						}>,
+					},
+				});
+				const port = detectPortFromFiles(
+					filesObject.files as Array<{ path: string; content: string }>,
+				);
+				const r = await getSandboxUrlOnServer({ data: { sandboxId, port } });
+				url = r.url;
+			} else {
+				const r = await initSandboxWithFilesOnServer({ data: filesObject });
+				url = r.url;
+				setSandboxId(r.sandboxId);
+			}
+			setGeneratedFiles(
+				filesObject.files as Array<{ path: string; content: string }>,
+			);
+			const indexHtml = filesObject.files.find((f: { path: string }) =>
+				/(^|\/)index\.html$/i.test(f.path),
+			);
+			if (indexHtml && typeof indexHtml.content === "string") {
+				setGeneratedAppCode(indexHtml.content);
+				setSelectedFilePath(indexHtml.path);
+			} else {
+				setGeneratedAppCode(JSON.stringify(filesObject, null, 2));
+				setSelectedFilePath(filesObject.files?.[0]?.path ?? null);
+			}
+			setPreviewUrl(url);
+			setStatus("App refined successfully! Previewing updates.");
+			appendToConsole("info", `Sandbox updated at ${url}`);
+		} catch (e) {
+			const msg =
+				e instanceof Error ? e.message : "Unknown error during refinement";
+			setStatus(`Error refining app: ${msg}`);
+			setError(msg);
+			appendToConsole("error", `Error refining app: ${msg}`, "failed");
+		} finally {
+			setIsGeneratingCode(false);
+		}
+	};
+
+	// No iframe data URL handling; sandbox preview URL is used instead
+
+	return (
+		<div className="flex flex-col h-screen">
+			<Header
+				onOpenMobileCodeDrawer={handleOpenMobileCodeDrawer}
+				hasGeneratedCode={!!generatedAppCode}
+			/>
+
+			<div className="p-2 flex-grow flex flex-col">
+				<div
+					className={`flex flex-1 overflow-hidden ${
+						isGeneratingCode || generatedAppCode ? "gap-2" : "justify-center"
+					}`}
+				>
+					<CodeInstruct
+						currentAppDescription={currentAppDescription}
+						followUpText={followUpText}
+						setFollowUpText={setFollowUpText}
+						isListening={voiceSessionIsListening}
+						status={status}
+						startVoiceSession={startListening}
+						stopVoiceSession={stopListening}
+						isGeneratingCode={isGeneratingCode}
+						generatedAppCode={generatedAppCode}
+						isMuted={voiceSessionIsMuted}
+						onToggleMute={toggleMute}
+						onSendMessage={handleFollowUpSubmit}
+					/>
+					{(isGeneratingCode || generatedAppCode) && (
+						<CodePreview
+							displayMode={displayMode}
+							setDisplayMode={setDisplayMode}
+							generatedAppCode={generatedAppCode}
+							isGeneratingCode={isGeneratingCode}
+							previewUrl={previewUrl}
+							files={generatedFiles}
+							selectedFilePath={selectedFilePath}
+							onSelectFile={setSelectedFilePath}
+							consoleOutputs={consoleOutputs}
+							setConsoleOutputs={setConsoleOutputs}
+							onClearConsole={handleClearConsole}
+						/>
+					)}
+				</div>
+			</div>
+
+			{/* Mobile Code Drawer */}
+			<MobileCodeDrawer
+				isOpen={isMobileCodeDrawerOpen}
+				onClose={handleCloseMobileCodeDrawer}
+				generatedAppCode={generatedAppCode}
+				previewUrl={previewUrl}
+			/>
+
+			<audio
+				ref={voiceSessionAudioRef}
+				style={{ display: "none" }}
+				aria-hidden="true"
+				tabIndex={-1}
+			>
+				<track kind="captions" />
+			</audio>
+		</div>
+	);
 }
