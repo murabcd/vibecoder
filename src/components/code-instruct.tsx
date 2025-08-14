@@ -45,7 +45,7 @@ export default function CodeInstruct({
 	return (
 		<div
 			className={cn(
-				"flex flex-col h-full justify-between max-h-[calc(100vh-7rem)]",
+				"flex flex-col h-full justify-between",
 				isActive ? "w-full md:w-[400px] px-2" : "w-full md:max-w-3xl px-4",
 			)}
 		>

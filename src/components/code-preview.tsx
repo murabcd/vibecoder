@@ -161,7 +161,7 @@ export default function CodePreview({
 	}, [selectedFileContent, displayMode, isCodeReady]);
 
 	return (
-		<div className="hidden md:flex flex-1 flex-col min-w-0 max-h-[calc(100vh-7rem)] border rounded-md bg-card overflow-hidden">
+		<div className="hidden md:flex flex-1 flex-col min-w-0 h-full border rounded-md bg-card overflow-hidden">
 			<div className="flex flex-col h-full overflow-hidden">
 				<div className="flex flex-1 overflow-hidden">
 					{displayMode === "code" ? (

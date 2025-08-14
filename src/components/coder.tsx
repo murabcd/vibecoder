@@ -1,22 +1,61 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 import { useVoiceSession } from "@/hooks/use-voice-session";
 
 import { appRefinemenPrompt } from "@/lib/ai/prompts";
 import { vibeCoderSessionParams, generateAppOnServer } from "@/lib/ai/ai";
 
-import Header from "@/components/header";
 import CodePreview from "@/components/code-preview";
 import CodeInstruct from "@/components/code-instruct";
 import MobileCodeDrawer from "@/components/mobile-code-drawer";
+import { AppSidebar } from "@/components/app-sidebar";
 import type { ConsoleOutput } from "@/components/console";
 import {
 	getSandboxUrlOnServer,
 	updateSandboxFilesOnServer,
 	initSandboxWithFilesOnServer,
 } from "@/lib/sandbox";
+import {
+	SidebarInset,
+	SidebarProvider,
+	SidebarTrigger,
+	useSidebar,
+} from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Plus } from "lucide-react";
+import ModeToggle from "@/components/mode-toggle";
+
+// Custom hook to read sidebar state from cookies
+function useSidebarState() {
+	const [defaultOpen, setDefaultOpen] = useState(true);
+	const [isInitialized, setIsInitialized] = useState(false);
+
+	useEffect(() => {
+		// Read the sidebar state from cookies
+		const cookies = document.cookie.split(";");
+		const sidebarCookie = cookies.find((cookie) =>
+			cookie.trim().startsWith("sidebar_state="),
+		);
+
+		if (sidebarCookie) {
+			const value = sidebarCookie.split("=")[1];
+			setDefaultOpen(value === "true");
+		}
+
+		setIsInitialized(true);
+	}, []);
+
+	return { defaultOpen, isInitialized };
+}
 
 export default function VibeCoder() {
+	const { defaultOpen, isInitialized } = useSidebarState();
+
 	const [status, setStatus] = useState(
 		"Click the voice button to start coding.",
 	);
@@ -63,7 +102,7 @@ export default function VibeCoder() {
 		setConsoleOutputs([]);
 	}, []);
 
-	const handleOpenMobileCodeDrawer = useCallback(() => {
+	const _handleOpenMobileCodeDrawer = useCallback(() => {
 		setIsMobileCodeDrawerOpen(true);
 	}, []);
 
@@ -314,67 +353,113 @@ export default function VibeCoder() {
 
 	// No iframe data URL handling; sandbox preview URL is used instead
 
+	// Don't render until we've read the cookie
+	if (!isInitialized) {
+		return null;
+	}
+
 	return (
-		<div className="flex flex-col h-screen">
-			<Header
-				onOpenMobileCodeDrawer={handleOpenMobileCodeDrawer}
-				hasGeneratedCode={!!generatedAppCode}
-			/>
+		<SidebarProvider defaultOpen={defaultOpen}>
+			<AppSidebar />
+			<SidebarInset>
+				<header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+					<div className="flex items-center gap-2 px-4">
+						<SidebarTrigger className="-ml-1" />
+						<PlusButton />
+					</div>
+					<div className="flex items-center gap-2 ml-auto px-4">
+						<ModeToggle />
+					</div>
+				</header>
 
-			<div className="p-2 flex-grow flex flex-col">
-				<div
-					className={`flex flex-1 overflow-hidden ${
-						isGeneratingCode || generatedAppCode ? "gap-2" : "justify-center"
-					}`}
-				>
-					<CodeInstruct
-						currentAppDescription={currentAppDescription}
-						followUpText={followUpText}
-						setFollowUpText={setFollowUpText}
-						isListening={voiceSessionIsListening}
-						status={status}
-						startVoiceSession={startListening}
-						stopVoiceSession={stopListening}
-						isGeneratingCode={isGeneratingCode}
+				<div className="flex flex-col h-[calc(100vh-4rem)]">
+					<div className="p-2 flex-grow flex flex-col">
+						<div
+							className={`flex flex-1 overflow-hidden ${
+								isGeneratingCode || generatedAppCode
+									? "gap-2"
+									: "justify-center"
+							}`}
+						>
+							<CodeInstruct
+								currentAppDescription={currentAppDescription}
+								followUpText={followUpText}
+								setFollowUpText={setFollowUpText}
+								isListening={voiceSessionIsListening}
+								status={status}
+								startVoiceSession={startListening}
+								stopVoiceSession={stopListening}
+								isGeneratingCode={isGeneratingCode}
+								generatedAppCode={generatedAppCode}
+								isMuted={voiceSessionIsMuted}
+								onToggleMute={toggleMute}
+								onSendMessage={handleFollowUpSubmit}
+							/>
+							{(isGeneratingCode || generatedAppCode) && (
+								<CodePreview
+									displayMode={displayMode}
+									setDisplayMode={setDisplayMode}
+									generatedAppCode={generatedAppCode}
+									isGeneratingCode={isGeneratingCode}
+									previewUrl={previewUrl}
+									files={generatedFiles}
+									selectedFilePath={selectedFilePath}
+									onSelectFile={setSelectedFilePath}
+									consoleOutputs={consoleOutputs}
+									setConsoleOutputs={setConsoleOutputs}
+									onClearConsole={handleClearConsole}
+								/>
+							)}
+						</div>
+					</div>
+
+					{/* Mobile Code Drawer */}
+					<MobileCodeDrawer
+						isOpen={isMobileCodeDrawerOpen}
+						onClose={handleCloseMobileCodeDrawer}
 						generatedAppCode={generatedAppCode}
-						isMuted={voiceSessionIsMuted}
-						onToggleMute={toggleMute}
-						onSendMessage={handleFollowUpSubmit}
+						previewUrl={previewUrl}
 					/>
-					{(isGeneratingCode || generatedAppCode) && (
-						<CodePreview
-							displayMode={displayMode}
-							setDisplayMode={setDisplayMode}
-							generatedAppCode={generatedAppCode}
-							isGeneratingCode={isGeneratingCode}
-							previewUrl={previewUrl}
-							files={generatedFiles}
-							selectedFilePath={selectedFilePath}
-							onSelectFile={setSelectedFilePath}
-							consoleOutputs={consoleOutputs}
-							setConsoleOutputs={setConsoleOutputs}
-							onClearConsole={handleClearConsole}
-						/>
-					)}
+
+					<audio
+						ref={voiceSessionAudioRef}
+						style={{ display: "none" }}
+						aria-hidden="true"
+						tabIndex={-1}
+					>
+						<track kind="captions" />
+					</audio>
 				</div>
-			</div>
+			</SidebarInset>
+		</SidebarProvider>
+	);
+}
 
-			{/* Mobile Code Drawer */}
-			<MobileCodeDrawer
-				isOpen={isMobileCodeDrawerOpen}
-				onClose={handleCloseMobileCodeDrawer}
-				generatedAppCode={generatedAppCode}
-				previewUrl={previewUrl}
-			/>
+// Component to handle + button visibility based on sidebar state
+function PlusButton() {
+	const { state } = useSidebar();
+	const isCollapsed = state === "collapsed";
 
-			<audio
-				ref={voiceSessionAudioRef}
-				style={{ display: "none" }}
-				aria-hidden="true"
-				tabIndex={-1}
-			>
-				<track kind="captions" />
-			</audio>
-		</div>
+	if (!isCollapsed) {
+		return null; // Hide when sidebar is expanded (button is in sidebar)
+	}
+
+	return (
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<Button
+					variant="outline"
+					size="icon"
+					onClick={() => {
+						window.location.reload();
+					}}
+				>
+					<Plus className="w-4 h-4" />
+				</Button>
+			</TooltipTrigger>
+			<TooltipContent>
+				<p>New vibe</p>
+			</TooltipContent>
+		</Tooltip>
 	);
 }

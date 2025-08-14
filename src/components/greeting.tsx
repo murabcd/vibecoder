@@ -1,5 +1,3 @@
-import { Link } from "@tanstack/react-router";
-
 import { motion } from "framer-motion";
 
 export default function Greeting() {
@@ -35,13 +33,14 @@ export default function Greeting() {
 			>
 				<p className="text-sm text-muted-foreground">
 					Vibe code with voice. If you like it, contribute or star on{" "}
-					<Link
+					<a
 						className="underline underline-offset-4"
 						href="https://github.com/murabcd/vibecoder"
 						target="_blank"
+						rel="noopener noreferrer"
 					>
 						GitHub
-					</Link>
+					</a>
 					.
 				</p>
 			</motion.div>
