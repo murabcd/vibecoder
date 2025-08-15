@@ -69,6 +69,17 @@ Guidelines:
 9. For Vite projects, the dev script should prefer port 5173 and include \`--host\`. For Next.js, prefer port 3000 and bind to 0.0.0.0.
 `;
 
+export const appNameGenerationPrompt = `Generate a short, catchy name (2-4 words max) for an app based on its description. 
+
+Requirements:
+- Keep it concise and memorable
+- Make it relevant to the app's functionality
+- Avoid generic terms like "App" or "Tool" 
+- Use creative but professional language that matches Vibe Coder's laid-back, modern style
+- Only return the name, nothing else
+
+The name should capture the essence of what the app does while being easy to remember and type. Think of names that would appeal to a young, tech-savvy audience - something that feels fresh and contemporary.`;
+
 export const appRefinemenPrompt = (
 	existingCode: string,
 	userInstruction: string,

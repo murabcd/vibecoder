@@ -24,6 +24,16 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
 	SidebarGroup,
 	SidebarGroupLabel,
 	SidebarMenu,
@@ -55,6 +65,8 @@ export function NavProjects({ onLoadApp }: NavProjectsProps) {
 	const { isMobile } = useSidebar();
 	const [editingId, setEditingId] = useState<Id<"histories"> | null>(null);
 	const [editingTitle, setEditingTitle] = useState("");
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [appToDelete, setAppToDelete] = useState<AppHistoryItem | null>(null);
 
 	// Convex queries and mutations
 	const appHistory = useQuery(api.histories.list) ?? [];
@@ -91,11 +103,23 @@ export function NavProjects({ onLoadApp }: NavProjectsProps) {
 		setEditingTitle("");
 	};
 
-	const handleDelete = async (id: Id<"histories">) => {
+	const handleDelete = (app: AppHistoryItem) => {
+		setAppToDelete(app);
+		setDeleteDialogOpen(true);
+	};
+
+	const handleDeleteConfirm = async () => {
+		if (!appToDelete) return;
+
 		try {
-			await removeApp({ id });
+			await removeApp({ id: appToDelete._id });
+			toast("Project deleted");
 		} catch (error) {
-			console.error("Failed to delete app:", error);
+			console.error("Failed to delete project:", error);
+			toast.error("Failed to delete project");
+		} finally {
+			setDeleteDialogOpen(false);
+			setAppToDelete(null);
 		}
 	};
 
@@ -216,7 +240,7 @@ export function NavProjects({ onLoadApp }: NavProjectsProps) {
 								<span>{app.starred ? "Unfavorite" : "Favorite"}</span>
 							</DropdownMenuItem>
 							<DropdownMenuItem
-								onClick={() => handleDelete(app._id)}
+								onClick={() => handleDelete(app)}
 								className="text-destructive focus:text-destructive"
 							>
 								<Trash2 className="text-destructive" />
@@ -250,12 +274,33 @@ export function NavProjects({ onLoadApp }: NavProjectsProps) {
 								disabled
 								className="text-sidebar-foreground/70"
 							>
-								<span className="text-xs">No apps yet</span>
+								<span className="text-xs">No projects yet</span>
 							</SidebarMenuButton>
 						</SidebarMenuItem>
 					)}
 				</SidebarMenu>
 			</SidebarGroup>
+
+			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+						<AlertDialogDescription>
+							This action cannot be undone. This will permanently delete the
+							project and remove your data from our servers.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={handleDeleteConfirm}
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						>
+							Delete
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</>
 	);
 }

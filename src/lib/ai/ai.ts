@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { OpenAI } from "openai";
 
 import { env } from "@/env";
-import { vibeCoderPrompt, appGenerationPrompt } from "@/lib/ai/prompts";
+import { vibeCoderPrompt, appGenerationPrompt, appNameGenerationPrompt } from "@/lib/ai/prompts";
 import { getModelId, modelChat, modelRealtimeMini } from "@/lib/ai/models";
 import { SandboxFilesPayloadSchema } from "@/lib/sandbox";
 
@@ -179,8 +179,7 @@ export const generateAppNameOnServer = createServerFn({ method: "POST" })
 				messages: [
 					{
 						role: "system",
-						content:
-							"Generate a short, catchy name (2-4 words max) for an app based on its description. Only return the name, nothing else.",
+						content: appNameGenerationPrompt,
 					},
 					{
 						role: "user",
