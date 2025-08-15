@@ -154,3 +154,57 @@ export const generateAppOnServer = createServerFn({ method: "POST" })
 			new Error("An unexpected error occurred while generating the app.")
 		);
 	});
+
+export const generateAppNameOnServer = createServerFn({ method: "POST" })
+	.validator((appDescription: string): string => {
+		if (typeof appDescription !== "string" || appDescription.trim() === "") {
+			throw new Error("App description cannot be empty.");
+		}
+		return appDescription;
+	})
+	.handler(async ({ data: appDescription }: { data: string }) => {
+		if (!env.OPENAI_API_KEY) {
+			throw new Error(
+				"OpenAI API key is not configured. Please set OPENAI_API_KEY in your .env.local file.",
+			);
+		}
+
+		const client = new OpenAI({
+			apiKey: env.OPENAI_API_KEY,
+		});
+
+		try {
+			const response = await client.chat.completions.create({
+				model: "gpt-4.1-nano",
+				messages: [
+					{
+						role: "system",
+						content:
+							"Generate a short, catchy name (2-4 words max) for an app based on its description. Only return the name, nothing else.",
+					},
+					{
+						role: "user",
+						content: appDescription,
+					},
+				],
+				max_tokens: 20,
+				temperature: 0.7,
+			});
+
+			const generatedName = response.choices[0]?.message?.content?.trim();
+			if (!generatedName) {
+				// Fallback to simple name generation from description
+				const words = appDescription.trim().split(/\s+/);
+				const firstThreeWords = words.slice(0, 3).join(" ");
+				return firstThreeWords + (words.length > 3 ? "..." : "");
+			}
+
+			return generatedName;
+		} catch (error) {
+			console.error("Error generating app name:", error);
+			// Fallback to simple name generation from description
+			const words = appDescription.trim().split(/\s+/);
+			const firstThreeWords = words.slice(0, 3).join(" ");
+			return firstThreeWords + (words.length > 3 ? "..." : "");
+		}
+	});

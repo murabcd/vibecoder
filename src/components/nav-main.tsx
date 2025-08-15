@@ -1,5 +1,3 @@
-"use client";
-
 import { ChevronRight, type LucideIcon } from "lucide-react";
 
 import {
@@ -29,6 +27,8 @@ export function NavMain({
 		items?: {
 			title: string;
 			url: string;
+			icon?: LucideIcon;
+			count?: number;
 		}[];
 	}[];
 }) {
@@ -56,8 +56,21 @@ export function NavMain({
 									{item.items?.map((subItem) => (
 										<SidebarMenuSubItem key={subItem.title}>
 											<SidebarMenuSubButton asChild>
-												<a href={subItem.url}>
-													<span>{subItem.title}</span>
+												<a
+													href={subItem.url}
+													className="flex items-center justify-between w-full"
+												>
+													<div className="flex items-center gap-2">
+														{subItem.icon && (
+															<subItem.icon className="h-4 w-4" />
+														)}
+														<span>{subItem.title}</span>
+													</div>
+													{subItem.count !== undefined && (
+														<span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+															{subItem.count}
+														</span>
+													)}
 												</a>
 											</SidebarMenuSubButton>
 										</SidebarMenuSubItem>

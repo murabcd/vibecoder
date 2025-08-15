@@ -3,17 +3,23 @@
 import type { ReactNode } from "react";
 import {
 	Outlet,
-	createRootRoute,
 	HeadContent,
 	Scripts,
 	ScriptOnce,
 } from "@tanstack/react-router";
 
 import { Toaster } from "@/components/ui/sonner";
+import { ConvexProvider } from "convex/react";
+import { convex } from "@/lib/convex";
+
+import type { QueryClient } from "@tanstack/react-query";
+import { createRootRouteWithContext } from "@tanstack/react-router";
 
 import appCss from "@/styles/app.css?url";
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<{
+	queryClient: QueryClient;
+}>()({
 	head: () => ({
 		meta: [
 			{
@@ -64,7 +70,7 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
             localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
             )`}
 				</ScriptOnce>
-				{children}
+				<ConvexProvider client={convex}>{children}</ConvexProvider>
 				<Toaster />
 				<Scripts />
 			</body>

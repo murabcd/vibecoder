@@ -91,7 +91,7 @@ function MessageInput({
 								size="icon"
 								onClick={onToggleMute}
 								disabled={!isListening}
-								className="rounded-full"
+								className="rounded-full cursor-pointer"
 								aria-label={isMuted ? "Unmute" : "Mute"}
 							>
 								{isMuted ? <MicOff size={20} /> : <Mic size={20} />}
@@ -110,7 +110,7 @@ function MessageInput({
 								variant="outline"
 								onClick={handleSendMessage}
 								disabled={!inputText.trim()}
-								className="rounded-full disabled:opacity-50"
+								className="rounded-full disabled:opacity-50 cursor-pointer"
 								aria-label="Send message"
 							>
 								<ArrowUp size={20} />
@@ -127,7 +127,7 @@ function MessageInput({
 								size="icon"
 								variant="default"
 								onClick={onToggleListening}
-								className="rounded-full"
+								className="rounded-full cursor-pointer"
 								aria-label={isListening ? "Stop listening" : "Start listening"}
 							>
 								{isListening ? <Square size={20} /> : <AudioLines size={20} />}

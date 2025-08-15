@@ -1,5 +1,3 @@
-"use client";
-
 import type * as React from "react";
 import {
 	AudioWaveform,
@@ -58,7 +56,46 @@ const data = {
 			plan: "Free",
 		},
 	],
-	navMain: [
+	projects: [
+		{
+			name: "Vim todo",
+			url: "#",
+			icon: Frame,
+		},
+		{
+			name: "PDF quiz generator",
+			url: "#",
+			icon: PieChart,
+		},
+		{
+			name: "Modal with horizontal scroll",
+			url: "#",
+			icon: MapIcon,
+		},
+	],
+};
+
+interface AppHistoryItem {
+	_id: string;
+	title: string;
+	description: string;
+	code: string;
+	files: Array<{ path: string; content: string }>;
+	previewUrl?: string;
+	sandboxId?: string;
+	createdAt: number;
+	starred?: boolean;
+}
+
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
+	onLoadApp?: (app: AppHistoryItem) => void;
+}
+
+export function AppSidebar({ onLoadApp, ...props }: AppSidebarProps) {
+	const { setOpenMobile } = useSidebar();
+
+	// Create navigation data
+	const navMain = [
 		{
 			title: "Projects",
 			url: "#",
@@ -66,11 +103,11 @@ const data = {
 			isActive: true,
 			items: [
 				{
-					title: "Recents",
+					title: "All",
 					url: "#",
 				},
 				{
-					title: "Starred",
+					title: "Recents",
 					url: "#",
 				},
 			],
@@ -121,28 +158,7 @@ const data = {
 				},
 			],
 		},
-	],
-	projects: [
-		{
-			name: "Vim todo",
-			url: "#",
-			icon: Frame,
-		},
-		{
-			name: "PDF quiz generator",
-			url: "#",
-			icon: PieChart,
-		},
-		{
-			name: "Modal with horizontal scroll",
-			url: "#",
-			icon: MapIcon,
-		},
-	],
-};
-
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-	const { setOpenMobile } = useSidebar();
+	];
 
 	return (
 		<Sidebar collapsible="icon" {...props}>
@@ -154,7 +170,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 							onClick={() => {
 								setOpenMobile(false);
 							}}
-							className="flex flex-row gap-3 items-center text-lg font-semibold px-2 hover:bg-muted rounded-md cursor-pointer group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 transition-all duration-200 ease-linear"
+							className="flex flex-row gap-3 items-center text-lg font-semibold px-2 rounded-md cursor-pointer group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 transition-all duration-200 ease-linear"
 						>
 							<div className="h-8 w-8 bg-foreground rounded-lg flex items-center justify-center">
 								<Terminal className="h-4 w-4 text-background" />
@@ -184,8 +200,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				</SidebarMenu>
 			</SidebarHeader>
 			<SidebarContent>
-				<NavMain items={data.navMain} />
-				<NavProjects projects={data.projects} />
+				<NavMain items={navMain} />
+				<NavProjects onLoadApp={onLoadApp} />
 			</SidebarContent>
 			<SidebarFooter>
 				<NavUser user={data.user} />

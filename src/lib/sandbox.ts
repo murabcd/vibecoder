@@ -11,6 +11,7 @@ export type SandboxEvent =
 	| {
 			type: "complete";
 			result: { sandboxId: string; url: string; port: number };
+			progress?: number;
 	  };
 
 // Simple event emitter for streaming updates - currently unused but kept for future implementation
@@ -22,7 +23,7 @@ export type SandboxEvent =
 const MAX_FILE_SIZE_BYTES = 512 * 1024; // 512 KB per file
 const MAX_TOTAL_SIZE_BYTES = 3 * 1024 * 1024; // 3 MB total
 
-function isSafeRelativePath(path: string): boolean {
+export function isSafeRelativePath(path: string): boolean {
 	if (typeof path !== "string" || path.trim() === "") return false;
 	if (path.startsWith("/")) return false;
 	if (path.includes("..")) return false;
@@ -32,7 +33,7 @@ function isSafeRelativePath(path: string): boolean {
 	return true;
 }
 
-function validateFilesPayload(
+export function validateFilesPayload(
 	files: Array<{ path: string; content: string }>,
 ): void {
 	let totalBytes = 0;
@@ -55,7 +56,7 @@ function validateFilesPayload(
 	}
 }
 
-function detectPreferredPortFromPackageJson(pkgJson: unknown): number {
+export function detectPreferredPortFromPackageJson(pkgJson: unknown): number {
 	try {
 		const pkg = pkgJson as {
 			scripts?: Record<string, string>;
@@ -73,7 +74,7 @@ function detectPreferredPortFromPackageJson(pkgJson: unknown): number {
 	return 3000;
 }
 
-function ensureExposedPort(
+export function ensureExposedPort(
 	ports: number[] | undefined,
 	desired: number,
 ): number[] {
@@ -99,7 +100,10 @@ export const initHtmlSandboxOnServer = createServerFn({ method: "POST" })
 		const { Sandbox } = await import("@vercel/sandbox");
 
 		// Create sandbox and expose port 3000 for the static server
-		const sandbox = await Sandbox.create({ ports: [3000] });
+		const sandbox = await Sandbox.create({
+			ports: [3000],
+			runtime: "node22",
+		});
 
 		// Write the HTML and a minimal package.json (optional)
 		await sandbox.writeFiles([
@@ -133,511 +137,6 @@ export const SandboxFilesPayloadSchema = z.object({
 	timeout: z.number().optional().default(300000), // 5 minutes default, same as reference app
 	ports: z.array(z.number()).max(2).optional(),
 });
-
-// ------------------------------
-// Operation State Management
-// ------------------------------
-
-export const OperationStatusSchema = z.object({
-	id: z.string(),
-	type: z.enum([
-		"sandbox-creation",
-		"file-generation",
-		"command-execution",
-		"file-upload",
-		"file-read",
-	]),
-	status: z.enum(["pending", "running", "completed", "failed"]),
-	progress: z.number().min(0).max(100).optional(),
-	message: z.string().optional(),
-	startedAt: z.number(),
-	completedAt: z.number().optional(),
-	metadata: z.record(z.unknown()).optional(),
-});
-
-export const CommandStateSchema = z.object({
-	commandId: z.string(),
-	sandboxId: z.string(),
-	command: z.string(),
-	args: z.array(z.string()),
-	status: z.enum(["running", "completed", "failed"]),
-	exitCode: z.number().optional(),
-	startedAt: z.number(),
-	completedAt: z.number().optional(),
-});
-
-export const SandboxStateSchema = z.object({
-	sandboxId: z.string(),
-	status: z.enum(["initializing", "running", "stopped", "error"]),
-	createdAt: z.number(),
-	timeout: z.number().optional(),
-	ports: z.array(z.number()).optional(),
-	runningCommands: z.array(z.string()).optional(),
-});
-
-export type OperationStatus = z.infer<typeof OperationStatusSchema>;
-export type CommandState = z.infer<typeof CommandStateSchema>;
-export type SandboxState = z.infer<typeof SandboxStateSchema>;
-
-// Type for command execution result
-interface CommandResult {
-	exitCode: number;
-	stdout: () => Promise<string>;
-	stderr: () => Promise<string>;
-}
-
-// Streaming version of sandbox initialization
-export const initSandboxWithFilesStreamOnServer = createServerFn({
-	method: "POST",
-})
-	.validator((payload: unknown) => SandboxFilesPayloadSchema.parse(payload))
-	.handler(async function* ({
-		data,
-	}: {
-		data: z.infer<typeof SandboxFilesPayloadSchema>;
-	}) {
-		const { Sandbox } = await import("@vercel/sandbox");
-
-		yield {
-			type: "status",
-			message: "Validating files...",
-			progress: 10,
-		} as SandboxEvent;
-		validateFilesPayload(data.files);
-
-		yield {
-			type: "status",
-			message: "Analyzing project structure...",
-			progress: 20,
-		} as SandboxEvent;
-
-		// Detect preferred app port from package.json if present
-		const pkgFile = data.files.find((f) =>
-			/(^|\/)package\.json$/i.test(f.path),
-		);
-		let pkgJson: {
-			packageManager?: string;
-			scripts?: Record<string, string>;
-			dependencies?: Record<string, string>;
-			devDependencies?: Record<string, string>;
-		} | null = null;
-		if (pkgFile) {
-			try {
-				pkgJson = JSON.parse(pkgFile.content.toString());
-			} catch {}
-		}
-		const desiredPort = pkgJson
-			? detectPreferredPortFromPackageJson(pkgJson)
-			: 3000;
-		const ports = ensureExposedPort(data.ports, desiredPort);
-
-		yield {
-			type: "status",
-			message: "Creating sandbox environment...",
-			progress: 30,
-		} as SandboxEvent;
-		const sandbox = await Sandbox.create({ timeout: data.timeout, ports });
-
-		yield {
-			type: "status",
-			message: "Writing files to sandbox...",
-			progress: 40,
-		} as SandboxEvent;
-		// Write all files
-		await sandbox.writeFiles(
-			data.files.map((f) => ({
-				path: f.path,
-				content: Buffer.from(f.content, "utf8"),
-			})),
-		);
-
-		// Branch: SPA (index.html) vs Fullstack (package.json)
-		const hasIndexHtml = data.files.some((f) =>
-			/(^|\/)index\.html$/i.test(f.path),
-		);
-
-		try {
-			if (pkgFile) {
-				yield {
-					type: "status",
-					message: "Setting up dependencies...",
-					progress: 50,
-				} as SandboxEvent;
-
-				const pkgMgr: "pnpm" | "bun" | "npm" = /pnpm/.test(
-					pkgJson?.packageManager ?? "",
-				)
-					? "pnpm"
-					: /bun/.test(pkgJson?.packageManager ?? "")
-						? "bun"
-						: "npm";
-
-				// Try install with inferred manager, then fallback to npm with safe flags
-				async function runInstall(): Promise<void> {
-					let exit = 1;
-					if (pkgMgr === "pnpm") {
-						const p = await sandbox.runCommand({
-							cmd: "npx",
-							args: ["-y", "pnpm", "i", "--no-frozen-lockfile"],
-						});
-						exit = (await p.wait()).exitCode;
-					} else if (pkgMgr === "bun") {
-						const p = await sandbox.runCommand({
-							cmd: "bun",
-							args: ["install"],
-						});
-						exit = (await p.wait()).exitCode;
-					} else {
-						const p = await sandbox.runCommand({
-							cmd: "npm",
-							args: [
-								"install",
-								"--silent",
-								"--no-audit",
-								"--no-fund",
-								"--legacy-peer-deps",
-							],
-						});
-						exit = (await p.wait()).exitCode;
-					}
-					if (exit !== 0) {
-						const p = await sandbox.runCommand({
-							cmd: "npm",
-							args: [
-								"install",
-								"--silent",
-								"--no-audit",
-								"--no-fund",
-								"--legacy-peer-deps",
-							],
-						});
-						const r = await p.wait();
-						if (r.exitCode !== 0) {
-							throw new Error("npm install failed inside sandbox");
-						}
-					}
-				}
-				await runInstall();
-
-				yield {
-					type: "status",
-					message: "Starting development server...",
-					progress: 70,
-				} as SandboxEvent;
-
-				// Start dev server. Prefer declared dev script; fallback to common frameworks.
-				const hasDevScript = typeof pkgJson?.scripts?.dev === "string";
-				if (hasDevScript) {
-					const runCmd =
-						pkgMgr === "pnpm"
-							? ["npx", ["-y", "pnpm", "run", "dev"]]
-							: pkgMgr === "bun"
-								? ["bun", ["run", "dev"]]
-								: ["npm", ["run", "dev"]];
-					await sandbox.runCommand({
-						cmd: runCmd[0] as string,
-						args: runCmd[1] as string[],
-						detached: true,
-					});
-				} else if (
-					/next/i.test(
-						JSON.stringify({
-							...pkgJson?.dependencies,
-							...pkgJson?.devDependencies,
-						}),
-					)
-				) {
-					await sandbox.runCommand({
-						cmd: "npx",
-						args: [
-							"-y",
-							"next",
-							"dev",
-							"-p",
-							String(desiredPort),
-							"-H",
-							"0.0.0.0",
-						],
-						detached: true,
-					});
-				} else if (
-					/vite/i.test(
-						JSON.stringify({
-							...pkgJson?.dependencies,
-							...pkgJson?.devDependencies,
-						}),
-					)
-				) {
-					await sandbox.runCommand({
-						cmd: "npx",
-						args: ["-y", "vite", "--port", String(desiredPort), "--host"],
-						detached: true,
-					});
-				} else {
-					// Last resort: try node server.js if present
-					await sandbox.runCommand({
-						cmd: "node",
-						args: ["server.js"],
-						detached: true,
-					});
-				}
-			} else if (hasIndexHtml) {
-				yield {
-					type: "status",
-					message: "Starting static file server...",
-					progress: 70,
-				} as SandboxEvent;
-				// Serve static HTML
-				await sandbox.runCommand({
-					cmd: "npx",
-					args: [
-						"-y",
-						"http-server",
-						"-p",
-						String(desiredPort),
-						"-a",
-						"0.0.0.0",
-					],
-					detached: true,
-				});
-			}
-
-			const url = sandbox.domain(desiredPort);
-
-			yield {
-				type: "status",
-				message: "Waiting for server to be ready...",
-				progress: 85,
-			} as SandboxEvent;
-
-			// Wait for server readiness to avoid initial 502s
-			const maxWaitMs = 60000;
-			const pollIntervalMs = 400;
-			const start = Date.now();
-			while (Date.now() - start < maxWaitMs) {
-				try {
-					const res = await fetch(url, { method: "HEAD" });
-					if (res.ok) {
-						break;
-					}
-				} catch {
-					// ignore and retry
-				}
-				await new Promise((r) => setTimeout(r, pollIntervalMs));
-			}
-
-			const result = { sandboxId: sandbox.sandboxId, url, port: desiredPort };
-			yield { type: "complete", result, progress: 100 } as SandboxEvent;
-			return result;
-		} catch (error) {
-			const errorMessage =
-				error instanceof Error ? error.message : "Unknown error occurred";
-			yield { type: "error", error: errorMessage } as SandboxEvent;
-			throw error;
-		}
-	});
-
-// Initialize a sandbox with a set of files described in JSON, validated by zod/v3
-export const initSandboxWithFilesOnServer = createServerFn({ method: "POST" })
-	.validator((payload: unknown) => SandboxFilesPayloadSchema.parse(payload))
-	.handler(
-		async ({ data }: { data: z.infer<typeof SandboxFilesPayloadSchema> }) => {
-			const { Sandbox } = await import("@vercel/sandbox");
-
-			validateFilesPayload(data.files);
-
-			// Detect preferred app port from package.json if present
-			const pkgFile = data.files.find((f) =>
-				/(^|\/)package\.json$/i.test(f.path),
-			);
-			let pkgJson: {
-				packageManager?: string;
-				scripts?: Record<string, string>;
-				dependencies?: Record<string, string>;
-				devDependencies?: Record<string, string>;
-			} | null = null;
-			if (pkgFile) {
-				try {
-					pkgJson = JSON.parse(pkgFile.content.toString());
-				} catch {}
-			}
-			const desiredPort = pkgJson
-				? detectPreferredPortFromPackageJson(pkgJson)
-				: 3000;
-			const ports = ensureExposedPort(data.ports, desiredPort);
-
-			const _sandboxStartTime = Date.now();
-			const sandbox = await Sandbox.create({
-				timeout: data.timeout || 300000, // 5 minutes default
-				ports,
-			});
-
-			// Write all files
-			const _writeStartTime = Date.now();
-			await sandbox.writeFiles(
-				data.files.map((f) => ({
-					path: f.path,
-					content: Buffer.from(f.content, "utf8"),
-				})),
-			);
-
-			// Branch: SPA (index.html) vs Fullstack (package.json)
-			const hasIndexHtml = data.files.some((f) =>
-				/(^|\/)index\.html$/i.test(f.path),
-			);
-
-			if (pkgFile) {
-				const pkgMgr: "pnpm" | "bun" | "npm" = /pnpm/.test(
-					pkgJson?.packageManager ?? "",
-				)
-					? "pnpm"
-					: /bun/.test(pkgJson?.packageManager ?? "")
-						? "bun"
-						: "npm";
-
-				// Try install with inferred manager, then fallback to npm with safe flags
-				async function runInstall(): Promise<void> {
-					const _installStartTime = Date.now();
-					let exit = 1;
-					if (pkgMgr === "pnpm") {
-						const p = await sandbox.runCommand({
-							cmd: "npx",
-							args: ["-y", "pnpm", "i", "--no-frozen-lockfile"],
-						});
-						exit = (await p.wait()).exitCode;
-					} else if (pkgMgr === "bun") {
-						const p = await sandbox.runCommand({
-							cmd: "bun",
-							args: ["install"],
-						});
-						exit = (await p.wait()).exitCode;
-					} else {
-						const p = await sandbox.runCommand({
-							cmd: "npm",
-							args: [
-								"install",
-								"--silent",
-								"--no-audit",
-								"--no-fund",
-								"--legacy-peer-deps",
-							],
-						});
-						exit = (await p.wait()).exitCode;
-					}
-					if (exit !== 0) {
-						const p = await sandbox.runCommand({
-							cmd: "npm",
-							args: [
-								"install",
-								"--silent",
-								"--no-audit",
-								"--no-fund",
-								"--legacy-peer-deps",
-							],
-						});
-						const r = await p.wait();
-						if (r.exitCode !== 0) {
-							throw new Error("npm install failed inside sandbox");
-						}
-					}
-				}
-				await runInstall();
-
-				// Start dev server. Prefer declared dev script; fallback to common frameworks.
-				const hasDevScript = typeof pkgJson?.scripts?.dev === "string";
-				if (hasDevScript) {
-					const runCmd =
-						pkgMgr === "pnpm"
-							? ["npx", ["-y", "pnpm", "run", "dev"]]
-							: pkgMgr === "bun"
-								? ["bun", ["run", "dev"]]
-								: ["npm", ["run", "dev"]];
-					await sandbox.runCommand({
-						cmd: runCmd[0] as string,
-						args: runCmd[1] as string[],
-						detached: true,
-					});
-				} else if (
-					/next/i.test(
-						JSON.stringify({
-							...pkgJson?.dependencies,
-							...pkgJson?.devDependencies,
-						}),
-					)
-				) {
-					await sandbox.runCommand({
-						cmd: "npx",
-						args: [
-							"-y",
-							"next",
-							"dev",
-							"-p",
-							String(desiredPort),
-							"-H",
-							"0.0.0.0",
-						],
-						detached: true,
-					});
-				} else if (
-					/vite/i.test(
-						JSON.stringify({
-							...pkgJson?.dependencies,
-							...pkgJson?.devDependencies,
-						}),
-					)
-				) {
-					await sandbox.runCommand({
-						cmd: "npx",
-						args: ["-y", "vite", "--port", String(desiredPort), "--host"],
-						detached: true,
-					});
-				} else {
-					// Last resort: try node server.js if present
-					await sandbox.runCommand({
-						cmd: "node",
-						args: ["server.js"],
-						detached: true,
-					});
-				}
-			} else if (hasIndexHtml) {
-				// Serve static HTML
-				await sandbox.runCommand({
-					cmd: "npx",
-					args: [
-						"-y",
-						"http-server",
-						"-p",
-						String(desiredPort),
-						"-a",
-						"0.0.0.0",
-					],
-					detached: true,
-				});
-			}
-
-			const url = sandbox.domain(desiredPort);
-
-			// Wait for server readiness to avoid initial 502s
-			const maxWaitMs = 60000;
-			const pollIntervalMs = 400;
-			const start = Date.now();
-			let _attempts = 0;
-			while (Date.now() - start < maxWaitMs) {
-				_attempts++;
-				try {
-					const res = await fetch(url, { method: "HEAD" });
-					if (res.ok) {
-						break;
-					}
-				} catch (_error) {
-					// Server not ready, continue polling
-				}
-				await new Promise((r) => setTimeout(r, pollIntervalMs));
-			}
-
-			return { sandboxId: sandbox.sandboxId, url, port: desiredPort };
-		},
-	);
 
 // ------------------------------
 // Additional server utilities
@@ -944,7 +443,11 @@ export const getCommandStatusOnServer = createServerFn({ method: "POST" })
 
 					// If we get here, command is completed
 					status = "completed";
-					const cmdResult = result as CommandResult;
+					const cmdResult = result as {
+						exitCode: number;
+						stdout: () => Promise<string>;
+						stderr: () => Promise<string>;
+					};
 					exitCode = cmdResult.exitCode;
 
 					// Get output if available
