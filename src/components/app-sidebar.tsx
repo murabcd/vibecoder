@@ -12,6 +12,7 @@ import {
 	SquareTerminal,
 	Terminal,
 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 import { NavMain } from "@/components/nav-main";
 import { NavProjects } from "@/components/nav-projects";
@@ -32,7 +33,6 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-// This is sample data.
 const data = {
 	user: {
 		name: "Murad Abdulkadyrov",
@@ -94,67 +94,62 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 export function AppSidebar({ onLoadApp, ...props }: AppSidebarProps) {
 	const { setOpenMobile } = useSidebar();
 
-	// Create navigation data
 	const navMain = [
 		{
 			title: "Projects",
-			url: "#",
+			url: "/projects",
 			icon: SquareTerminal,
 			isActive: true,
 			items: [
 				{
 					title: "All",
-					url: "#",
+					url: "/projects/all",
 				},
 				{
 					title: "Recents",
-					url: "#",
+					url: "/projects/recent",
 				},
 			],
 		},
 		{
 			title: "Documentation",
-			url: "#",
+			url: "/documentation",
 			icon: BookOpen,
 			items: [
 				{
 					title: "Introduction",
-					url: "#",
+					url: "/documentation/introduction",
 				},
 				{
 					title: "Get started",
-					url: "#",
+					url: "/documentation/get-started",
 				},
 				{
 					title: "Tutorials",
-					url: "#",
+					url: "/documentation/tutorials",
 				},
 				{
 					title: "Changelog",
-					url: "#",
+					url: "/documentation/changelog",
 				},
 			],
 		},
 		{
 			title: "Settings",
-			url: "#",
+			url: "/settings",
 			icon: Settings2,
 			items: [
 				{
 					title: "General",
-					url: "#",
-				},
-				{
-					title: "Team",
-					url: "#",
+					url: "/settings/general",
 				},
 				{
 					title: "Billing",
-					url: "#",
+					url: "/settings/billing",
 				},
 				{
-					title: "Limits",
-					url: "#",
+					title: "API keys",
+					url: "/settings/api-keys",
 				},
 			],
 		},
@@ -165,8 +160,8 @@ export function AppSidebar({ onLoadApp, ...props }: AppSidebarProps) {
 			<SidebarHeader>
 				<SidebarMenu>
 					<div className="flex flex-row justify-between items-center gap-1">
-						<button
-							type="button"
+						<Link
+							to="/"
 							onClick={() => {
 								setOpenMobile(false);
 							}}
@@ -178,13 +173,13 @@ export function AppSidebar({ onLoadApp, ...props }: AppSidebarProps) {
 							<span className="group-data-[collapsible=icon]:hidden whitespace-nowrap">
 								Vibe <span className="text-muted-foreground">Coder</span>
 							</span>
-						</button>
+						</Link>
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<Button
 									variant="ghost"
 									size="icon"
-									className="h-8 w-8 group-data-[collapsible=icon]:hidden"
+									className="h-8 w-8 group-data-[collapsible=icon]:hidden cursor-pointer"
 									onClick={() => {
 										window.location.reload();
 									}}

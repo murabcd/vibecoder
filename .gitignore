@@ -40,3 +40,6 @@ yarn-error.log*
 .tanstack/
 .env*.local
 .nitro/
+
+# claude
+CLAUDE.md

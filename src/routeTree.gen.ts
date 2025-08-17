@@ -11,16 +11,97 @@
 import { createServerRootRoute } from '@tanstack/react-start/server'
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as AppIndexRouteImport } from './routes/_app.index'
+import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppProjectsRouteImport } from './routes/_app.projects'
+import { Route as AppDocumentationRouteImport } from './routes/_app.documentation'
+import { Route as AppSettingsGeneralRouteImport } from './routes/_app.settings.general'
+import { Route as AppSettingsBillingRouteImport } from './routes/_app.settings.billing'
+import { Route as AppSettingsApiKeysRouteImport } from './routes/_app.settings.api-keys'
+import { Route as AppProjectsRecentRouteImport } from './routes/_app.projects.recent'
+import { Route as AppProjectsAllRouteImport } from './routes/_app.projects.all'
+import { Route as AppDocumentationTutorialsRouteImport } from './routes/_app.documentation.tutorials'
+import { Route as AppDocumentationIntroductionRouteImport } from './routes/_app.documentation.introduction'
+import { Route as AppDocumentationGetStartedRouteImport } from './routes/_app.documentation.get-started'
+import { Route as AppDocumentationChangelogRouteImport } from './routes/_app.documentation.changelog'
 import { ServerRoute as ApiSandboxStreamServerRouteImport } from './routes/api/sandbox/stream'
 
 const rootServerRouteImport = createServerRootRoute()
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProjectsRoute = AppProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDocumentationRoute = AppDocumentationRouteImport.update({
+  id: '/documentation',
+  path: '/documentation',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsGeneralRoute = AppSettingsGeneralRouteImport.update({
+  id: '/general',
+  path: '/general',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsBillingRoute = AppSettingsBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsApiKeysRoute = AppSettingsApiKeysRouteImport.update({
+  id: '/api-keys',
+  path: '/api-keys',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppProjectsRecentRoute = AppProjectsRecentRouteImport.update({
+  id: '/recent',
+  path: '/recent',
+  getParentRoute: () => AppProjectsRoute,
+} as any)
+const AppProjectsAllRoute = AppProjectsAllRouteImport.update({
+  id: '/all',
+  path: '/all',
+  getParentRoute: () => AppProjectsRoute,
+} as any)
+const AppDocumentationTutorialsRoute =
+  AppDocumentationTutorialsRouteImport.update({
+    id: '/tutorials',
+    path: '/tutorials',
+    getParentRoute: () => AppDocumentationRoute,
+  } as any)
+const AppDocumentationIntroductionRoute =
+  AppDocumentationIntroductionRouteImport.update({
+    id: '/introduction',
+    path: '/introduction',
+    getParentRoute: () => AppDocumentationRoute,
+  } as any)
+const AppDocumentationGetStartedRoute =
+  AppDocumentationGetStartedRouteImport.update({
+    id: '/get-started',
+    path: '/get-started',
+    getParentRoute: () => AppDocumentationRoute,
+  } as any)
+const AppDocumentationChangelogRoute =
+  AppDocumentationChangelogRouteImport.update({
+    id: '/changelog',
+    path: '/changelog',
+    getParentRoute: () => AppDocumentationRoute,
+  } as any)
 const ApiSandboxStreamServerRoute = ApiSandboxStreamServerRouteImport.update({
   id: '/api/sandbox/stream',
   path: '/api/sandbox/stream',
@@ -28,25 +109,103 @@ const ApiSandboxStreamServerRoute = ApiSandboxStreamServerRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/documentation': typeof AppDocumentationRouteWithChildren
+  '/projects': typeof AppProjectsRouteWithChildren
+  '/settings': typeof AppSettingsRouteWithChildren
+  '/': typeof AppIndexRoute
+  '/documentation/changelog': typeof AppDocumentationChangelogRoute
+  '/documentation/get-started': typeof AppDocumentationGetStartedRoute
+  '/documentation/introduction': typeof AppDocumentationIntroductionRoute
+  '/documentation/tutorials': typeof AppDocumentationTutorialsRoute
+  '/projects/all': typeof AppProjectsAllRoute
+  '/projects/recent': typeof AppProjectsRecentRoute
+  '/settings/api-keys': typeof AppSettingsApiKeysRoute
+  '/settings/billing': typeof AppSettingsBillingRoute
+  '/settings/general': typeof AppSettingsGeneralRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/documentation': typeof AppDocumentationRouteWithChildren
+  '/projects': typeof AppProjectsRouteWithChildren
+  '/settings': typeof AppSettingsRouteWithChildren
+  '/': typeof AppIndexRoute
+  '/documentation/changelog': typeof AppDocumentationChangelogRoute
+  '/documentation/get-started': typeof AppDocumentationGetStartedRoute
+  '/documentation/introduction': typeof AppDocumentationIntroductionRoute
+  '/documentation/tutorials': typeof AppDocumentationTutorialsRoute
+  '/projects/all': typeof AppProjectsAllRoute
+  '/projects/recent': typeof AppProjectsRecentRoute
+  '/settings/api-keys': typeof AppSettingsApiKeysRoute
+  '/settings/billing': typeof AppSettingsBillingRoute
+  '/settings/general': typeof AppSettingsGeneralRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
+  '/_app/documentation': typeof AppDocumentationRouteWithChildren
+  '/_app/projects': typeof AppProjectsRouteWithChildren
+  '/_app/settings': typeof AppSettingsRouteWithChildren
+  '/_app/': typeof AppIndexRoute
+  '/_app/documentation/changelog': typeof AppDocumentationChangelogRoute
+  '/_app/documentation/get-started': typeof AppDocumentationGetStartedRoute
+  '/_app/documentation/introduction': typeof AppDocumentationIntroductionRoute
+  '/_app/documentation/tutorials': typeof AppDocumentationTutorialsRoute
+  '/_app/projects/all': typeof AppProjectsAllRoute
+  '/_app/projects/recent': typeof AppProjectsRecentRoute
+  '/_app/settings/api-keys': typeof AppSettingsApiKeysRoute
+  '/_app/settings/billing': typeof AppSettingsBillingRoute
+  '/_app/settings/general': typeof AppSettingsGeneralRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/documentation'
+    | '/projects'
+    | '/settings'
+    | '/'
+    | '/documentation/changelog'
+    | '/documentation/get-started'
+    | '/documentation/introduction'
+    | '/documentation/tutorials'
+    | '/projects/all'
+    | '/projects/recent'
+    | '/settings/api-keys'
+    | '/settings/billing'
+    | '/settings/general'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/documentation'
+    | '/projects'
+    | '/settings'
+    | '/'
+    | '/documentation/changelog'
+    | '/documentation/get-started'
+    | '/documentation/introduction'
+    | '/documentation/tutorials'
+    | '/projects/all'
+    | '/projects/recent'
+    | '/settings/api-keys'
+    | '/settings/billing'
+    | '/settings/general'
+  id:
+    | '__root__'
+    | '/_app'
+    | '/_app/documentation'
+    | '/_app/projects'
+    | '/_app/settings'
+    | '/_app/'
+    | '/_app/documentation/changelog'
+    | '/_app/documentation/get-started'
+    | '/_app/documentation/introduction'
+    | '/_app/documentation/tutorials'
+    | '/_app/projects/all'
+    | '/_app/projects/recent'
+    | '/_app/settings/api-keys'
+    | '/_app/settings/billing'
+    | '/_app/settings/general'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
 }
 export interface FileServerRoutesByFullPath {
   '/api/sandbox/stream': typeof ApiSandboxStreamServerRoute
@@ -72,12 +231,103 @@ export interface RootServerRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/': {
+      id: '/_app/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/projects': {
+      id: '/_app/projects'
+      path: '/projects'
+      fullPath: '/projects'
+      preLoaderRoute: typeof AppProjectsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/documentation': {
+      id: '/_app/documentation'
+      path: '/documentation'
+      fullPath: '/documentation'
+      preLoaderRoute: typeof AppDocumentationRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings/general': {
+      id: '/_app/settings/general'
+      path: '/general'
+      fullPath: '/settings/general'
+      preLoaderRoute: typeof AppSettingsGeneralRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/billing': {
+      id: '/_app/settings/billing'
+      path: '/billing'
+      fullPath: '/settings/billing'
+      preLoaderRoute: typeof AppSettingsBillingRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/api-keys': {
+      id: '/_app/settings/api-keys'
+      path: '/api-keys'
+      fullPath: '/settings/api-keys'
+      preLoaderRoute: typeof AppSettingsApiKeysRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/projects/recent': {
+      id: '/_app/projects/recent'
+      path: '/recent'
+      fullPath: '/projects/recent'
+      preLoaderRoute: typeof AppProjectsRecentRouteImport
+      parentRoute: typeof AppProjectsRoute
+    }
+    '/_app/projects/all': {
+      id: '/_app/projects/all'
+      path: '/all'
+      fullPath: '/projects/all'
+      preLoaderRoute: typeof AppProjectsAllRouteImport
+      parentRoute: typeof AppProjectsRoute
+    }
+    '/_app/documentation/tutorials': {
+      id: '/_app/documentation/tutorials'
+      path: '/tutorials'
+      fullPath: '/documentation/tutorials'
+      preLoaderRoute: typeof AppDocumentationTutorialsRouteImport
+      parentRoute: typeof AppDocumentationRoute
+    }
+    '/_app/documentation/introduction': {
+      id: '/_app/documentation/introduction'
+      path: '/introduction'
+      fullPath: '/documentation/introduction'
+      preLoaderRoute: typeof AppDocumentationIntroductionRouteImport
+      parentRoute: typeof AppDocumentationRoute
+    }
+    '/_app/documentation/get-started': {
+      id: '/_app/documentation/get-started'
+      path: '/get-started'
+      fullPath: '/documentation/get-started'
+      preLoaderRoute: typeof AppDocumentationGetStartedRouteImport
+      parentRoute: typeof AppDocumentationRoute
+    }
+    '/_app/documentation/changelog': {
+      id: '/_app/documentation/changelog'
+      path: '/changelog'
+      fullPath: '/documentation/changelog'
+      preLoaderRoute: typeof AppDocumentationChangelogRouteImport
+      parentRoute: typeof AppDocumentationRoute
     }
   }
 }
@@ -93,8 +343,71 @@ declare module '@tanstack/react-start/server' {
   }
 }
 
+interface AppDocumentationRouteChildren {
+  AppDocumentationChangelogRoute: typeof AppDocumentationChangelogRoute
+  AppDocumentationGetStartedRoute: typeof AppDocumentationGetStartedRoute
+  AppDocumentationIntroductionRoute: typeof AppDocumentationIntroductionRoute
+  AppDocumentationTutorialsRoute: typeof AppDocumentationTutorialsRoute
+}
+
+const AppDocumentationRouteChildren: AppDocumentationRouteChildren = {
+  AppDocumentationChangelogRoute: AppDocumentationChangelogRoute,
+  AppDocumentationGetStartedRoute: AppDocumentationGetStartedRoute,
+  AppDocumentationIntroductionRoute: AppDocumentationIntroductionRoute,
+  AppDocumentationTutorialsRoute: AppDocumentationTutorialsRoute,
+}
+
+const AppDocumentationRouteWithChildren =
+  AppDocumentationRoute._addFileChildren(AppDocumentationRouteChildren)
+
+interface AppProjectsRouteChildren {
+  AppProjectsAllRoute: typeof AppProjectsAllRoute
+  AppProjectsRecentRoute: typeof AppProjectsRecentRoute
+}
+
+const AppProjectsRouteChildren: AppProjectsRouteChildren = {
+  AppProjectsAllRoute: AppProjectsAllRoute,
+  AppProjectsRecentRoute: AppProjectsRecentRoute,
+}
+
+const AppProjectsRouteWithChildren = AppProjectsRoute._addFileChildren(
+  AppProjectsRouteChildren,
+)
+
+interface AppSettingsRouteChildren {
+  AppSettingsApiKeysRoute: typeof AppSettingsApiKeysRoute
+  AppSettingsBillingRoute: typeof AppSettingsBillingRoute
+  AppSettingsGeneralRoute: typeof AppSettingsGeneralRoute
+}
+
+const AppSettingsRouteChildren: AppSettingsRouteChildren = {
+  AppSettingsApiKeysRoute: AppSettingsApiKeysRoute,
+  AppSettingsBillingRoute: AppSettingsBillingRoute,
+  AppSettingsGeneralRoute: AppSettingsGeneralRoute,
+}
+
+const AppSettingsRouteWithChildren = AppSettingsRoute._addFileChildren(
+  AppSettingsRouteChildren,
+)
+
+interface AppRouteChildren {
+  AppDocumentationRoute: typeof AppDocumentationRouteWithChildren
+  AppProjectsRoute: typeof AppProjectsRouteWithChildren
+  AppSettingsRoute: typeof AppSettingsRouteWithChildren
+  AppIndexRoute: typeof AppIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppDocumentationRoute: AppDocumentationRouteWithChildren,
+  AppProjectsRoute: AppProjectsRouteWithChildren,
+  AppSettingsRoute: AppSettingsRouteWithChildren,
+  AppIndexRoute: AppIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

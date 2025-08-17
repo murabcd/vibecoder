@@ -2,7 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { OpenAI } from "openai";
 
 import { env } from "@/env";
-import { vibeCoderPrompt, appGenerationPrompt, appNameGenerationPrompt } from "@/lib/ai/prompts";
+import {
+	vibeCoderPrompt,
+	appGenerationPrompt,
+	appNameGenerationPrompt,
+} from "@/lib/ai/prompts";
 import { getModelId, modelChat, modelRealtimeMini } from "@/lib/ai/models";
 import { SandboxFilesPayloadSchema } from "@/lib/sandbox";
 

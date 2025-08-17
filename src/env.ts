@@ -4,7 +4,6 @@ import { z } from "zod";
 export const env = createEnv({
 	server: {
 		OPENAI_API_KEY: z.string().min(1),
-		VERCEL_OIDC_TOKEN: z.string().min(1),
 	},
 
 	clientPrefix: "VITE_",
