@@ -63,33 +63,35 @@ function AppBreadcrumbs() {
 
 	if (pathSegments.length === 0) return null;
 
+	const DISPLAY_NAMES: Record<string, string> = {
+		projects: "Projects",
+		settings: "Settings",
+		documentation: "Documentation",
+		all: "All",
+		recent: "Recents",
+		introduction: "Introduction",
+		"get-started": "Get started",
+		changelog: "Changelog",
+		general: "General",
+		billing: "Billing",
+		"api-keys": "API keys",
+	};
+
 	const getDisplayName = (segment: string) => {
-		switch (segment) {
-			case "projects":
-				return "Projects";
-			case "settings":
-				return "Settings";
-			case "documentation":
-				return "Documentation";
-			case "all":
-				return "All";
-			case "recent":
-				return "Recents";
-			case "introduction":
-				return "Introduction";
-			case "get-started":
-				return "Get started";
-			case "changelog":
-				return "Changelog";
-			case "general":
-				return "General";
-			case "billing":
-				return "Billing";
-			case "api-keys":
-				return "API keys";
-			default:
-				return segment.charAt(0).toUpperCase() + segment.slice(1);
-		}
+		return (
+			DISPLAY_NAMES[segment] ||
+			segment.charAt(0).toUpperCase() + segment.slice(1)
+		);
+	};
+
+	const DEFAULT_SUB_PATHS: Record<string, string> = {
+		projects: "/projects/all",
+		documentation: "/documentation/introduction",
+		settings: "/settings/general",
+	};
+
+	const getDefaultSubPath = (segment: string) => {
+		return DEFAULT_SUB_PATHS[segment] || `/${segment}`;
 	};
 
 	// For main sections, treat them as the root (no "Home" prefix)
@@ -101,8 +103,18 @@ function AppBreadcrumbs() {
 		const breadcrumbItems = pathSegments.map((segment, index) => {
 			const path = `/${pathSegments.slice(0, index + 1).join("/")}`;
 			const isLast = index === pathSegments.length - 1;
+			const isParentSection =
+				index === 0 &&
+				["projects", "documentation", "settings"].includes(segment);
+			const actualPath =
+				isParentSection && !isLast ? getDefaultSubPath(segment) : path;
 
-			return { path, segment, isLast, displayName: getDisplayName(segment) };
+			return {
+				path: actualPath,
+				segment,
+				isLast,
+				displayName: getDisplayName(segment),
+			};
 		});
 
 		return (

@@ -14,6 +14,7 @@ import {
 	SidebarMenuSub,
 	SidebarMenuSubButton,
 	SidebarMenuSubItem,
+	useSidebar,
 } from "@/components/ui/sidebar";
 
 export function NavMain({
@@ -32,6 +33,9 @@ export function NavMain({
 		}[];
 	}[];
 }) {
+	const { state } = useSidebar();
+	const isCollapsed = state === "collapsed";
+
 	return (
 		<SidebarGroup>
 			<SidebarGroupLabel>Playground</SidebarGroupLabel>
@@ -44,39 +48,50 @@ export function NavMain({
 						className="group/collapsible"
 					>
 						<SidebarMenuItem>
-							<CollapsibleTrigger asChild>
-								<SidebarMenuButton tooltip={item.title}>
-									{item.icon && <item.icon />}
-									<span>{item.title}</span>
-									<ChevronRight className="absolute right-2 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden" />
+							{isCollapsed ? (
+								<SidebarMenuButton tooltip={item.title} asChild>
+									<a href={item.url}>
+										{item.icon && <item.icon />}
+										<span>{item.title}</span>
+									</a>
 								</SidebarMenuButton>
-							</CollapsibleTrigger>
-							<CollapsibleContent>
-								<SidebarMenuSub>
-									{item.items?.map((subItem) => (
-										<SidebarMenuSubItem key={subItem.title}>
-											<SidebarMenuSubButton asChild>
-												<a
-													href={subItem.url}
-													className="flex items-center justify-between w-full"
-												>
-													<div className="flex items-center gap-2">
-														{subItem.icon && (
-															<subItem.icon className="h-4 w-4" />
+							) : (
+								<CollapsibleTrigger asChild>
+									<SidebarMenuButton tooltip={item.title}>
+										{item.icon && <item.icon />}
+										<span>{item.title}</span>
+										<ChevronRight className="absolute right-2 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden" />
+									</SidebarMenuButton>
+								</CollapsibleTrigger>
+							)}
+							{!isCollapsed && (
+								<CollapsibleContent>
+									<SidebarMenuSub>
+										{item.items?.map((subItem) => (
+											<SidebarMenuSubItem key={subItem.title}>
+												<SidebarMenuSubButton asChild>
+													<a
+														href={subItem.url}
+														className="flex items-center justify-between w-full"
+													>
+														<div className="flex items-center gap-2">
+															{subItem.icon && (
+																<subItem.icon className="h-4 w-4" />
+															)}
+															<span>{subItem.title}</span>
+														</div>
+														{subItem.count !== undefined && (
+															<span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+																{subItem.count}
+															</span>
 														)}
-														<span>{subItem.title}</span>
-													</div>
-													{subItem.count !== undefined && (
-														<span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
-															{subItem.count}
-														</span>
-													)}
-												</a>
-											</SidebarMenuSubButton>
-										</SidebarMenuSubItem>
-									))}
-								</SidebarMenuSub>
-							</CollapsibleContent>
+													</a>
+												</SidebarMenuSubButton>
+											</SidebarMenuSubItem>
+										))}
+									</SidebarMenuSub>
+								</CollapsibleContent>
+							)}
 						</SidebarMenuItem>
 					</Collapsible>
 				))}

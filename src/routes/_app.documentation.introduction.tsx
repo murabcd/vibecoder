@@ -1,15 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-	ArrowRight,
-	Copy,
-	Github,
-	Zap,
-	Code,
-	Sparkles,
-	Info,
-} from "lucide-react";
+
+import { ArrowRight, Github, Zap, Code, Sparkles, Info } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
 	Card,
 	CardContent,

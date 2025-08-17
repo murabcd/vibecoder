@@ -1,27 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
-	ArrowRight,
 	Copy,
 	CheckCircle,
 	Terminal,
 	Package,
 	Settings,
-	GitBranch,
-	Globe,
 	AlertTriangle,
 	Star,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const Route = createFileRoute("/_app/documentation/get-started")({

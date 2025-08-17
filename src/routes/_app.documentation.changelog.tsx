@@ -1,13 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-	ArrowRight,
-	Tag,
-	Plus,
-	Bug,
-	Zap,
-	AlertTriangle,
-	CheckCircle,
-} from "lucide-react";
+
+import { ArrowRight, Tag, Plus, Bug, Zap } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {

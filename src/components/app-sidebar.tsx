@@ -97,7 +97,7 @@ export function AppSidebar({ onLoadApp, ...props }: AppSidebarProps) {
 	const navMain = [
 		{
 			title: "Projects",
-			url: "/projects",
+			url: "/projects/all",
 			icon: SquareTerminal,
 			isActive: true,
 			items: [
@@ -113,7 +113,7 @@ export function AppSidebar({ onLoadApp, ...props }: AppSidebarProps) {
 		},
 		{
 			title: "Documentation",
-			url: "/documentation",
+			url: "/documentation/introduction",
 			icon: BookOpen,
 			items: [
 				{
@@ -132,7 +132,7 @@ export function AppSidebar({ onLoadApp, ...props }: AppSidebarProps) {
 		},
 		{
 			title: "Settings",
-			url: "/settings",
+			url: "/settings/general",
 			icon: Settings2,
 			items: [
 				{
