@@ -172,16 +172,20 @@ export function AppSidebar({ onLoadApp, ...props }: AppSidebarProps) {
 						</Link>
 						<Tooltip>
 							<TooltipTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon"
-									className="h-8 w-8 group-data-[collapsible=icon]:hidden cursor-pointer"
+								<Link
+									to="/"
 									onClick={() => {
-										window.location.reload();
+										setOpenMobile(false);
 									}}
 								>
-									<Plus className="h-4 w-4" />
-								</Button>
+									<Button
+										variant="ghost"
+										size="icon"
+										className="h-8 w-8 group-data-[collapsible=icon]:hidden cursor-pointer"
+									>
+										<Plus className="h-4 w-4" />
+									</Button>
+								</Link>
 							</TooltipTrigger>
 							<TooltipContent>
 								<p>New vibe</p>

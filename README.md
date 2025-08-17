@@ -7,11 +7,13 @@
   Realtime Voice AI VibeCoder Built With Tanstack Start and OpenAI.
 </p>
 
+<p align="center">
 ❗ This project is in very early development and lots of things will change.
+</p>
 
 <p align="center">
   <a href="#features"><strong>Features</strong></a> ·
-  <a href="#model-provider"><strong>Model Provider</strong></a> ·
+  <a href="#model-provider"><strong>Model provider</strong></a> ·
   <a href="#deploy-your-own"><strong>Deploy Your Own</strong></a> ·
   <a href="#running-locally"><strong>Running locally</strong></a>
 </p>
@@ -33,7 +35,7 @@
   - Styling with [Tailwind CSS](https://tailwindcss.com)
   - Component primitives from [Radix UI](https://radix-ui.com) for accessibility and flexibility
 
-## Model Provider
+## Model provider
 
 This app utilizes the [OpenAI API](https://openai.com/) for its AI capabilities. It is configured to use the following OpenAI models:
 
