@@ -125,10 +125,6 @@ export function AppSidebar({ onLoadApp, ...props }: AppSidebarProps) {
 					url: "/documentation/get-started",
 				},
 				{
-					title: "Tutorials",
-					url: "/documentation/tutorials",
-				},
-				{
 					title: "Changelog",
 					url: "/documentation/changelog",
 				},
@@ -171,7 +167,7 @@ export function AppSidebar({ onLoadApp, ...props }: AppSidebarProps) {
 								<Terminal className="h-4 w-4 text-background" />
 							</div>
 							<span className="group-data-[collapsible=icon]:hidden whitespace-nowrap">
-								Vibe <span className="text-muted-foreground">Coder</span>
+								Vibe<span className="text-muted-foreground">Coder</span>
 							</span>
 						</Link>
 						<Tooltip>

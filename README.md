@@ -1,10 +1,10 @@
 <a href="https://vibecoder-oss.vercel.app">
-  <img alt="Realtime Voice AI Vibe Coder Built With Tanstack Start and OpenAI." src="./public/preview/vibecoder.png">
-  <h1 align="center">Vibe Coder</h1>  
+  <img alt="Realtime Voice AI VibeCoder Built With Tanstack Start and OpenAI." src="./public/preview/vibecoder.png">
+  <h1 align="center">VibeCoder</h1>  
 </a>
 
 <p align="center">
-  Realtime Voice AI Vibe Coder Built With Tanstack Start and OpenAI.
+  Realtime Voice AI VibeCoder Built With Tanstack Start and OpenAI.
 </p>
 
 ❗ This project is in very early development and lots of things will change.
@@ -42,13 +42,13 @@ This app utilizes the [OpenAI API](https://openai.com/) for its AI capabilities.
 
 ## Deploy your own
 
-You can deploy your own version of Vibe Coder to Vercel with one click:
+You can deploy your own version of VibeCoder to Vercel with one click:
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmurabcd%2FVibeCoder&env=VITE_OPENAI_API_KEY&envDescription=You%27ll%20need%20an%20OpenAI%20API%20key.&envLink=https%3A%2F%2Fgithub.com%2Fmurabcd%2FVibeCoder%2Fblob%2Fmain%2F.env.example&demo-title=VibeCoder&demo-description=An%20Open-source%20Realtime%20AI%20Voice%20Agent%20Built%20With%20Tanstack%20Start%20and%20OpenAI.&demo-url=https%3A%2F%2Fvibecoder-oss.vercel.app)
 
 ## Running locally
 
-You will need to use the environment variables [defined in `.env.example`](.env.example) to run Vibe Coder. It's recommended you use [Vercel Environment Variables](https://vercel.com/docs/projects/environment-variables) for this, but a `.env` file is all that is necessary.
+You will need to use the environment variables [defined in `.env.example`](.env.example) to run VibeCoder. It's recommended you use [Vercel Environment Variables](https://vercel.com/docs/projects/environment-variables) for this, but a `.env` file is all that is necessary.
 
 > Note: You should not commit your `.env` file or it will expose secrets that will allow others to control access to your OpenAI account.
 

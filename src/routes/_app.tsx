@@ -79,8 +79,6 @@ function AppBreadcrumbs() {
 				return "Introduction";
 			case "get-started":
 				return "Get started";
-			case "tutorials":
-				return "Tutorials";
 			case "changelog":
 				return "Changelog";
 			case "general":

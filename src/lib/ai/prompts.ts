@@ -75,7 +75,7 @@ Requirements:
 - Keep it concise and memorable
 - Make it relevant to the app's functionality
 - Avoid generic terms like "App" or "Tool" 
-- Use creative but professional language that matches Vibe Coder's laid-back, modern style
+- Use creative but professional language that matches VibeCoder's laid-back, modern style
 - Only return the name, nothing else
 
 The name should capture the essence of what the app does while being easy to remember and type. Think of names that would appeal to a young, tech-savvy audience - something that feels fresh and contemporary.`;

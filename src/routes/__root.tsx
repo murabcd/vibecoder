@@ -30,7 +30,7 @@ export const Route = createRootRouteWithContext<{
 				content: "width=device-width, initial-scale=1",
 			},
 			{
-				title: "Vibe Coder",
+				title: "VibeCoder",
 			},
 			{
 				name: "author",

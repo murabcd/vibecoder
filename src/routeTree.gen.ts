@@ -21,7 +21,6 @@ import { Route as AppSettingsBillingRouteImport } from './routes/_app.settings.b
 import { Route as AppSettingsApiKeysRouteImport } from './routes/_app.settings.api-keys'
 import { Route as AppProjectsRecentRouteImport } from './routes/_app.projects.recent'
 import { Route as AppProjectsAllRouteImport } from './routes/_app.projects.all'
-import { Route as AppDocumentationTutorialsRouteImport } from './routes/_app.documentation.tutorials'
 import { Route as AppDocumentationIntroductionRouteImport } from './routes/_app.documentation.introduction'
 import { Route as AppDocumentationGetStartedRouteImport } from './routes/_app.documentation.get-started'
 import { Route as AppDocumentationChangelogRouteImport } from './routes/_app.documentation.changelog'
@@ -78,12 +77,6 @@ const AppProjectsAllRoute = AppProjectsAllRouteImport.update({
   path: '/all',
   getParentRoute: () => AppProjectsRoute,
 } as any)
-const AppDocumentationTutorialsRoute =
-  AppDocumentationTutorialsRouteImport.update({
-    id: '/tutorials',
-    path: '/tutorials',
-    getParentRoute: () => AppDocumentationRoute,
-  } as any)
 const AppDocumentationIntroductionRoute =
   AppDocumentationIntroductionRouteImport.update({
     id: '/introduction',
@@ -116,7 +109,6 @@ export interface FileRoutesByFullPath {
   '/documentation/changelog': typeof AppDocumentationChangelogRoute
   '/documentation/get-started': typeof AppDocumentationGetStartedRoute
   '/documentation/introduction': typeof AppDocumentationIntroductionRoute
-  '/documentation/tutorials': typeof AppDocumentationTutorialsRoute
   '/projects/all': typeof AppProjectsAllRoute
   '/projects/recent': typeof AppProjectsRecentRoute
   '/settings/api-keys': typeof AppSettingsApiKeysRoute
@@ -131,7 +123,6 @@ export interface FileRoutesByTo {
   '/documentation/changelog': typeof AppDocumentationChangelogRoute
   '/documentation/get-started': typeof AppDocumentationGetStartedRoute
   '/documentation/introduction': typeof AppDocumentationIntroductionRoute
-  '/documentation/tutorials': typeof AppDocumentationTutorialsRoute
   '/projects/all': typeof AppProjectsAllRoute
   '/projects/recent': typeof AppProjectsRecentRoute
   '/settings/api-keys': typeof AppSettingsApiKeysRoute
@@ -148,7 +139,6 @@ export interface FileRoutesById {
   '/_app/documentation/changelog': typeof AppDocumentationChangelogRoute
   '/_app/documentation/get-started': typeof AppDocumentationGetStartedRoute
   '/_app/documentation/introduction': typeof AppDocumentationIntroductionRoute
-  '/_app/documentation/tutorials': typeof AppDocumentationTutorialsRoute
   '/_app/projects/all': typeof AppProjectsAllRoute
   '/_app/projects/recent': typeof AppProjectsRecentRoute
   '/_app/settings/api-keys': typeof AppSettingsApiKeysRoute
@@ -165,7 +155,6 @@ export interface FileRouteTypes {
     | '/documentation/changelog'
     | '/documentation/get-started'
     | '/documentation/introduction'
-    | '/documentation/tutorials'
     | '/projects/all'
     | '/projects/recent'
     | '/settings/api-keys'
@@ -180,7 +169,6 @@ export interface FileRouteTypes {
     | '/documentation/changelog'
     | '/documentation/get-started'
     | '/documentation/introduction'
-    | '/documentation/tutorials'
     | '/projects/all'
     | '/projects/recent'
     | '/settings/api-keys'
@@ -196,7 +184,6 @@ export interface FileRouteTypes {
     | '/_app/documentation/changelog'
     | '/_app/documentation/get-started'
     | '/_app/documentation/introduction'
-    | '/_app/documentation/tutorials'
     | '/_app/projects/all'
     | '/_app/projects/recent'
     | '/_app/settings/api-keys'
@@ -301,13 +288,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProjectsAllRouteImport
       parentRoute: typeof AppProjectsRoute
     }
-    '/_app/documentation/tutorials': {
-      id: '/_app/documentation/tutorials'
-      path: '/tutorials'
-      fullPath: '/documentation/tutorials'
-      preLoaderRoute: typeof AppDocumentationTutorialsRouteImport
-      parentRoute: typeof AppDocumentationRoute
-    }
     '/_app/documentation/introduction': {
       id: '/_app/documentation/introduction'
       path: '/introduction'
@@ -347,14 +327,12 @@ interface AppDocumentationRouteChildren {
   AppDocumentationChangelogRoute: typeof AppDocumentationChangelogRoute
   AppDocumentationGetStartedRoute: typeof AppDocumentationGetStartedRoute
   AppDocumentationIntroductionRoute: typeof AppDocumentationIntroductionRoute
-  AppDocumentationTutorialsRoute: typeof AppDocumentationTutorialsRoute
 }
 
 const AppDocumentationRouteChildren: AppDocumentationRouteChildren = {
   AppDocumentationChangelogRoute: AppDocumentationChangelogRoute,
   AppDocumentationGetStartedRoute: AppDocumentationGetStartedRoute,
   AppDocumentationIntroductionRoute: AppDocumentationIntroductionRoute,
-  AppDocumentationTutorialsRoute: AppDocumentationTutorialsRoute,
 }
 
 const AppDocumentationRouteWithChildren =
