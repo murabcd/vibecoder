@@ -9,7 +9,20 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import {
+	HoverCard,
+	HoverCardContent,
+	HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import StatusBar from "@/components/status-bar";
+import { modelInfoList } from "@/lib/ai/models";
 
 export interface MessagesProps {
 	inputText: string;
@@ -20,6 +33,8 @@ export interface MessagesProps {
 	isMuted: boolean;
 	onToggleMute: () => void;
 	onSendMessage: (message: string) => void;
+	selectedModel: string;
+	onModelChange: (model: string) => void;
 }
 
 function MessageInput({
@@ -31,6 +46,8 @@ function MessageInput({
 	isMuted,
 	onToggleMute,
 	onSendMessage,
+	selectedModel,
+	onModelChange,
 }: MessagesProps) {
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -64,7 +81,7 @@ function MessageInput({
 				<Textarea
 					ref={textareaRef}
 					id="followUpInputArea"
-					className="w-full resize-none overflow-y-auto text-sm bg-muted pr-24 dark:border-zinc-700 border border-input rounded-2xl min-h-[98px]"
+					className="w-full resize-none overflow-y-auto text-sm bg-muted pr-24 dark:border-zinc-700 border border-input rounded-2xl min-h-[120px]"
 					placeholder="Ask a follow up..."
 					value={inputText}
 					onChange={(e) => {
@@ -101,6 +118,46 @@ function MessageInput({
 							<p>{isMuted ? "Unmute" : "Mute"}</p>
 						</TooltipContent>
 					</Tooltip>
+
+					<Select value={selectedModel} onValueChange={onModelChange}>
+						<SelectTrigger className="w-[150px] h-8 text-xs bg-background border-border hover:bg-accent hover:text-accent-foreground cursor-pointer">
+							<SelectValue placeholder="Select model" />
+						</SelectTrigger>
+						<SelectContent>
+							{modelInfoList.map((model) => (
+								<SelectItem key={model.id} value={model.id}>
+									<HoverCard>
+										<HoverCardTrigger asChild>
+											<span>{model.name}</span>
+										</HoverCardTrigger>
+										<HoverCardContent
+											className="w-80"
+											side="right"
+											align="start"
+										>
+											<div className="space-y-2">
+												<h4 className="font-semibold text-sm">{model.name}</h4>
+												<p className="text-sm text-muted-foreground">
+													{model.description}
+												</p>
+												<div>
+													<p className="text-xs font-medium mb-1">Strengths</p>
+													<ul className="text-xs text-muted-foreground space-y-1">
+														{model.strengths.map((strength) => (
+															<li key={strength} className="flex items-center">
+																<span className="w-1.5 h-1.5 bg-primary rounded-full mr-2"></span>
+																{strength}
+															</li>
+														))}
+													</ul>
+												</div>
+											</div>
+										</HoverCardContent>
+									</HoverCard>
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
 				</div>
 				<div className="absolute bottom-3 right-3 flex items-center gap-2">
 					<Tooltip>

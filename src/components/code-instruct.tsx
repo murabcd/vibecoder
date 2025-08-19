@@ -16,6 +16,8 @@ interface CodeInstructProps {
 	isMuted: boolean;
 	onToggleMute: () => void;
 	onSendMessage: (message: string) => void;
+	selectedModel: string;
+	onModelChange: (model: string) => void;
 }
 
 export default function CodeInstruct({
@@ -31,6 +33,8 @@ export default function CodeInstruct({
 	isMuted,
 	onToggleMute,
 	onSendMessage,
+	selectedModel,
+	onModelChange,
 }: CodeInstructProps) {
 	const handleToggleListening = () => {
 		if (isListening) {
@@ -45,11 +49,11 @@ export default function CodeInstruct({
 	return (
 		<div
 			className={cn(
-				"flex flex-col h-full justify-between",
+				"flex flex-col h-full",
 				isActive ? "w-full md:w-[400px] px-2" : "w-full md:max-w-3xl px-4",
 			)}
 		>
-			<div className={cn(!isActive && "pt-48")}>
+			<div className={cn(!isActive && "pt-48", "flex-1")}>
 				{currentAppDescription ? (
 					<div className="p-3 min-h-[100px] text-sm overflow-auto">
 						{currentAppDescription}
@@ -60,16 +64,20 @@ export default function CodeInstruct({
 					</div>
 				)}
 			</div>
-			<MessageInput
-				inputText={followUpText}
-				setInputText={setFollowUpText}
-				isListening={isListening}
-				onToggleListening={handleToggleListening}
-				status={status}
-				isMuted={isMuted}
-				onToggleMute={onToggleMute}
-				onSendMessage={onSendMessage}
-			/>
+			<div className="mt-auto">
+				<MessageInput
+					inputText={followUpText}
+					setInputText={setFollowUpText}
+					isListening={isListening}
+					onToggleListening={handleToggleListening}
+					status={status}
+					isMuted={isMuted}
+					onToggleMute={onToggleMute}
+					onSendMessage={onSendMessage}
+					selectedModel={selectedModel}
+					onModelChange={onModelChange}
+				/>
+			</div>
 		</div>
 	);
 }

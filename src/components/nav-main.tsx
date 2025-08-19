@@ -1,4 +1,5 @@
 import { ChevronRight, type LucideIcon } from "lucide-react";
+import { useLocation } from "@tanstack/react-router";
 
 import {
 	Collapsible,
@@ -34,7 +35,17 @@ export function NavMain({
 	}[];
 }) {
 	const { state } = useSidebar();
+	const location = useLocation();
 	const isCollapsed = state === "collapsed";
+
+	const isMainItemActive = (item: typeof items[0]) => {
+		return location.pathname.startsWith(item.url) || 
+			item.items?.some(subItem => location.pathname === subItem.url);
+	};
+
+	const isSubItemActive = (subItem: { url: string }) => {
+		return location.pathname === subItem.url;
+	};
 
 	return (
 		<SidebarGroup>
@@ -44,12 +55,16 @@ export function NavMain({
 					<Collapsible
 						key={item.title}
 						asChild
-						defaultOpen={item.isActive}
+						defaultOpen={isMainItemActive(item)}
 						className="group/collapsible"
 					>
 						<SidebarMenuItem>
 							{isCollapsed ? (
-								<SidebarMenuButton tooltip={item.title} asChild>
+								<SidebarMenuButton 
+									tooltip={item.title} 
+									asChild
+									isActive={isMainItemActive(item)}
+								>
 									<a href={item.url}>
 										{item.icon && <item.icon />}
 										<span>{item.title}</span>
@@ -57,7 +72,10 @@ export function NavMain({
 								</SidebarMenuButton>
 							) : (
 								<CollapsibleTrigger asChild>
-									<SidebarMenuButton tooltip={item.title}>
+									<SidebarMenuButton 
+										tooltip={item.title}
+										isActive={isMainItemActive(item)}
+									>
 										{item.icon && <item.icon />}
 										<span>{item.title}</span>
 										<ChevronRight className="absolute right-2 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden" />
@@ -69,7 +87,10 @@ export function NavMain({
 									<SidebarMenuSub>
 										{item.items?.map((subItem) => (
 											<SidebarMenuSubItem key={subItem.title}>
-												<SidebarMenuSubButton asChild>
+												<SidebarMenuSubButton 
+													asChild
+													isActive={isSubItemActive(subItem)}
+												>
 													<a
 														href={subItem.url}
 														className="flex items-center justify-between w-full"

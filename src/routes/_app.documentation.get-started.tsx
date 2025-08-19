@@ -8,6 +8,7 @@ import {
 	AlertTriangle,
 	Star,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +19,31 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 export const Route = createFileRoute("/_app/documentation/get-started")({
 	component: GetStartedPage,
 });
+
+// CopyButton component for reusable copy functionality
+function CopyButton({ text }: { text: string }) {
+	const handleCopy = async () => {
+		try {
+			await navigator.clipboard.writeText(text);
+			toast.success("Copied to clipboard!");
+		} catch (err) {
+			console.error("Failed to copy text: ", err);
+			toast.error("Failed to copy to clipboard");
+		}
+	};
+
+	return (
+		<Button
+			variant="ghost"
+			size="sm"
+			className="ml-2 cursor-pointer"
+			onClick={handleCopy}
+			title="Copy to clipboard"
+		>
+			<Copy className="h-4 w-4" />
+		</Button>
+	);
+}
 
 function GetStartedPage() {
 	return (
@@ -99,77 +125,75 @@ function GetStartedPage() {
 							<h3 className="text-sm font-medium mb-2">
 								1. Clone the repository
 							</h3>
-							<div className="bg-muted p-4 rounded-lg">
-								<code className="text-sm font-mono">
+							<div className="bg-muted p-4 rounded-lg flex items-center gap-3">
+								<code className="text-sm font-mono flex-1 break-all">
 									git clone https://github.com/murabcd/vibecoder.git
 								</code>
-								<Button variant="ghost" size="sm" className="ml-2">
-									<Copy className="h-4 w-4" />
-								</Button>
+								<CopyButton text="git clone https://github.com/murabcd/vibecoder.git" />
 							</div>
 						</div>
 						<div>
 							<h3 className="text-sm font-medium mb-2">
 								2. Navigate to the project
 							</h3>
-							<div className="bg-muted p-4 rounded-lg">
-								<code className="text-sm font-mono">cd vibecoder</code>
-								<Button variant="ghost" size="sm" className="ml-2">
-									<Copy className="h-4 w-4" />
-								</Button>
+							<div className="bg-muted p-4 rounded-lg flex items-center gap-3">
+								<code className="text-sm font-mono flex-1 break-all">
+									cd vibecoder
+								</code>
+								<CopyButton text="cd vibecoder" />
 							</div>
 						</div>
 						<div>
 							<h3 className="text-sm font-medium mb-2">
 								3. Install Vercel CLI
 							</h3>
-							<div className="bg-muted p-4 rounded-lg">
-								<code className="text-sm font-mono">bun i -g vercel</code>
-								<Button variant="ghost" size="sm" className="ml-2">
-									<Copy className="h-4 w-4" />
-								</Button>
+							<div className="bg-muted p-4 rounded-lg flex items-center gap-3">
+								<code className="text-sm font-mono flex-1 break-all">
+									bun i -g vercel
+								</code>
+								<CopyButton text="bun i -g vercel" />
 							</div>
 						</div>
 						<div>
 							<h3 className="text-sm font-medium mb-2">4. Link with Vercel</h3>
-							<div className="bg-muted p-4 rounded-lg">
-								<code className="text-sm font-mono">vercel link</code>
-								<Button variant="ghost" size="sm" className="ml-2">
-									<Copy className="h-4 w-4" />
-								</Button>
+							<div className="bg-muted p-4 rounded-lg flex items-center gap-3">
+								<code className="text-sm font-mono flex-1 break-all">
+									vercel link
+								</code>
+								<CopyButton text="vercel link" />
 							</div>
 						</div>
 						<div>
 							<h3 className="text-sm font-medium mb-2">
 								5. Download environment variables
 							</h3>
-							<div className="bg-muted p-4 rounded-lg">
-								<code className="text-sm font-mono">vercel env pull</code>
-								<Button variant="ghost" size="sm" className="ml-2">
-									<Copy className="h-4 w-4" />
-								</Button>
+							<div className="bg-muted p-4 rounded-lg flex items-center gap-3">
+								<code className="text-sm font-mono flex-1 break-all">
+									vercel env pull
+								</code>
+								<CopyButton text="vercel env pull" />
 							</div>
 						</div>
 						<div>
 							<h3 className="text-sm font-medium mb-2">
 								6. Install dependencies
 							</h3>
-							<div className="bg-muted p-4 rounded-lg">
-								<code className="text-sm font-mono">bun install</code>
-								<Button variant="ghost" size="sm" className="ml-2">
-									<Copy className="h-4 w-4" />
-								</Button>
+							<div className="bg-muted p-4 rounded-lg flex items-center gap-3">
+								<code className="text-sm font-mono flex-1 break-all">
+									bun install
+								</code>
+								<CopyButton text="bun install" />
 							</div>
 						</div>
 						<div>
 							<h3 className="text-sm font-medium mb-2">
 								7. Start the development server
 							</h3>
-							<div className="bg-muted p-4 rounded-lg">
-								<code className="text-sm font-mono">bun dev</code>
-								<Button variant="ghost" size="sm" className="ml-2">
-									<Copy className="h-4 w-4" />
-								</Button>
+							<div className="bg-muted p-4 rounded-lg flex items-center gap-3">
+								<code className="text-sm font-mono flex-1 break-all">
+									bun dev
+								</code>
+								<CopyButton text="bun dev" />
 							</div>
 						</div>
 					</div>
@@ -197,8 +221,8 @@ function GetStartedPage() {
 								<code className="bg-muted px-1 rounded">vercel env pull</code>.
 								Make sure you have the following variables configured:
 							</p>
-							<div className="bg-muted p-4 rounded-lg">
-								<code className="text-sm font-mono">
+							<div className="bg-muted p-4 rounded-lg flex items-center gap-3">
+								<code className="text-sm font-mono flex-1 break-all">
 									# OpenAI API Key (Required)
 									<br />
 									VITE_OPENAI_API_KEY=your_openai_api_key_here
@@ -207,9 +231,13 @@ function GetStartedPage() {
 									<br />
 									VITE_CONVEX_URL=your_convex_url_here
 								</code>
-								<Button variant="ghost" size="sm" className="ml-2">
-									<Copy className="h-4 w-4" />
-								</Button>
+								<CopyButton
+									text={`# OpenAI API Key (Required)
+VITE_OPENAI_API_KEY=your_openai_api_key_here
+
+# Convex URL (for backend)
+VITE_CONVEX_URL=your_convex_url_here`}
+								/>
 							</div>
 							<Alert variant="destructive" className="mt-4">
 								<AlertTriangle className="h-4 w-4" />

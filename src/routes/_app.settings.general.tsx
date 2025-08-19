@@ -41,7 +41,7 @@ function RouteComponent() {
 					</div>
 
 					<div className="flex justify-end">
-						<Button>Save</Button>
+						<Button className="cursor-pointer">Save</Button>
 					</div>
 				</div>
 			</div>
@@ -83,7 +83,7 @@ function RouteComponent() {
 					</div>
 
 					<div className="flex justify-end">
-						<Button>Save</Button>
+						<Button className="cursor-pointer">Save</Button>
 					</div>
 				</div>
 			</div>
@@ -135,7 +135,7 @@ function RouteComponent() {
 					</div>
 
 					<div className="flex justify-end">
-						<Button>Save</Button>
+						<Button className="cursor-pointer">Save</Button>
 					</div>
 				</div>
 			</div>
@@ -154,7 +154,7 @@ function RouteComponent() {
 					<div className="flex justify-start">
 						<Button
 							variant="outline"
-							className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+							className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 cursor-pointer"
 						>
 							Delete account
 						</Button>

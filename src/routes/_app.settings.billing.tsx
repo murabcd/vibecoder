@@ -91,10 +91,10 @@ function RouteComponent() {
 								</p>
 							</div>
 							<div className="flex items-center space-x-3">
-								<Button variant="outline" size="sm">
+								<Button variant="outline" size="sm" className="cursor-pointer">
 									View all plans
 								</Button>
-								<Button size="sm">
+								<Button size="sm" className="cursor-pointer">
 									<CreditCard className="h-4 w-4 mr-2" />
 									Upgrade
 								</Button>
@@ -196,10 +196,20 @@ function RouteComponent() {
 						</div>
 						<div className="flex items-center space-x-2">
 							<span className="text-sm text-muted-foreground">1 of 1</span>
-							<Button variant="outline" size="sm" disabled>
+							<Button
+								variant="outline"
+								size="sm"
+								disabled
+								className="cursor-pointer"
+							>
 								←
 							</Button>
-							<Button variant="outline" size="sm" disabled>
+							<Button
+								variant="outline"
+								size="sm"
+								disabled
+								className="cursor-pointer"
+							>
 								→
 							</Button>
 						</div>

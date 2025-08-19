@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, useRef } from "react";
+import { useState, useEffect } from "react";
 import { createFileRoute, Outlet, useLocation } from "@tanstack/react-router";
 
 import { AppSidebar } from "@/components/app-sidebar";
@@ -39,22 +39,6 @@ function useSidebarState() {
 	return { defaultOpen, isInitialized };
 }
 
-interface AppHistoryItem {
-	_id: string;
-	title: string;
-	description: string;
-	code: string;
-	files: Array<{ path: string; content: string }>;
-	previewUrl?: string;
-	sandboxId?: string;
-}
-
-const AppLoadContext = createContext<{
-	onLoadApp?: (app: AppHistoryItem) => void;
-	registerLoadAppHandler?: (handler: (app: AppHistoryItem) => void) => void;
-}>({});
-
-export const useAppLoad = () => useContext(AppLoadContext);
 
 function AppBreadcrumbs() {
 	const location = useLocation();
@@ -178,48 +162,31 @@ export const Route = createFileRoute("/_app")({
 
 function AppLayout() {
 	const { defaultOpen, isInitialized } = useSidebarState();
-	const loadAppHandlerRef = useRef<((app: AppHistoryItem) => void) | null>(
-		null,
-	);
-
-	const registerLoadAppHandler = (handler: (app: AppHistoryItem) => void) => {
-		loadAppHandlerRef.current = handler;
-	};
-
-	const handleLoadApp = (app: AppHistoryItem) => {
-		if (loadAppHandlerRef.current) {
-			loadAppHandlerRef.current(app);
-		}
-	};
 
 	if (!isInitialized) {
 		return null;
 	}
 
 	return (
-		<AppLoadContext.Provider
-			value={{ onLoadApp: handleLoadApp, registerLoadAppHandler }}
-		>
-			<SidebarProvider defaultOpen={defaultOpen}>
-				<AppSidebar onLoadApp={handleLoadApp} />
-				<SidebarInset>
-					<header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-						<div className="flex items-center gap-2 px-4">
-							<SidebarTrigger className="-ml-1" />
-							<Separator
-								orientation="vertical"
-								className="mr-2 data-[orientation=vertical]:h-4"
-							/>
-							<AppBreadcrumbs />
-						</div>
-						<div className="flex-1"></div>
-						<div className="flex items-center gap-2 px-4">
-							<ModeToggle />
-						</div>
-					</header>
-					<Outlet />
-				</SidebarInset>
-			</SidebarProvider>
-		</AppLoadContext.Provider>
+		<SidebarProvider defaultOpen={defaultOpen}>
+			<AppSidebar />
+			<SidebarInset>
+				<header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+					<div className="flex items-center gap-2 px-4">
+						<SidebarTrigger className="-ml-1" />
+						<Separator
+							orientation="vertical"
+							className="mr-2 data-[orientation=vertical]:h-4"
+						/>
+						<AppBreadcrumbs />
+					</div>
+					<div className="flex-1"></div>
+					<div className="flex items-center gap-2 px-4">
+						<ModeToggle />
+					</div>
+				</header>
+				<Outlet />
+			</SidebarInset>
+		</SidebarProvider>
 	);
 }

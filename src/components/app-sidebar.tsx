@@ -75,23 +75,9 @@ const data = {
 	],
 };
 
-interface AppHistoryItem {
-	_id: string;
-	title: string;
-	description: string;
-	code: string;
-	files: Array<{ path: string; content: string }>;
-	previewUrl?: string;
-	sandboxId?: string;
-	createdAt: number;
-	starred?: boolean;
-}
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {}
 
-interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
-	onLoadApp?: (app: AppHistoryItem) => void;
-}
-
-export function AppSidebar({ onLoadApp, ...props }: AppSidebarProps) {
+export function AppSidebar({ ...props }: AppSidebarProps) {
 	const { setOpenMobile } = useSidebar();
 
 	const navMain = [
@@ -99,7 +85,6 @@ export function AppSidebar({ onLoadApp, ...props }: AppSidebarProps) {
 			title: "Projects",
 			url: "/projects/all",
 			icon: SquareTerminal,
-			isActive: true,
 			items: [
 				{
 					title: "All",
@@ -163,7 +148,7 @@ export function AppSidebar({ onLoadApp, ...props }: AppSidebarProps) {
 							}}
 							className="flex flex-row gap-3 items-center text-lg font-semibold px-2 rounded-md cursor-pointer group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 transition-all duration-200 ease-linear"
 						>
-							<div className="h-8 w-8 bg-foreground rounded-lg flex items-center justify-center">
+							<div className="h-8 w-8 bg-foreground rounded-xl flex items-center justify-center">
 								<Terminal className="h-4 w-4 text-background" />
 							</div>
 							<span className="group-data-[collapsible=icon]:hidden whitespace-nowrap">
@@ -196,7 +181,7 @@ export function AppSidebar({ onLoadApp, ...props }: AppSidebarProps) {
 			</SidebarHeader>
 			<SidebarContent>
 				<NavMain items={navMain} />
-				<NavProjects onLoadApp={onLoadApp} />
+				<NavProjects />
 			</SidebarContent>
 			<SidebarFooter>
 				<NavUser user={data.user} />

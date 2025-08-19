@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { ArrowRight, Tag, Plus, Bug, Zap } from "lucide-react";
+import { ArrowRight, Tag, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,6 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/_app/documentation/changelog")({
 	component: ChangelogPage,
@@ -147,7 +146,10 @@ function ChangelogPage() {
 									Released on {new Date(releases[0].date).toLocaleDateString()}
 								</div>
 							</div>
-							<Button className="w-full" onClick={scrollToLatestRelease}>
+							<Button
+								className="w-full cursor-pointer"
+								onClick={scrollToLatestRelease}
+							>
 								View release notes
 								<ArrowRight className="h-4 w-4 ml-2" />
 							</Button>
@@ -192,87 +194,23 @@ function ChangelogPage() {
 									</CardDescription>
 								</CardHeader>
 								<CardContent>
-									<Tabs defaultValue="features" className="w-full">
-										<TabsList className="grid w-full grid-cols-3">
-											<TabsTrigger
-												value="features"
-												className="flex items-center gap-1"
-											>
-												<Plus className="h-4 w-4" />
-												Features
-											</TabsTrigger>
-											<TabsTrigger
-												value="improvements"
-												className="flex items-center gap-1"
-											>
-												<Zap className="h-4 w-4" />
-												Improvements
-											</TabsTrigger>
-											<TabsTrigger
-												value="fixes"
-												className="flex items-center gap-1"
-											>
-												<Bug className="h-4 w-4" />
-												Fixes
-											</TabsTrigger>
-										</TabsList>
-
-										<TabsContent value="features" className="space-y-2">
-											{release.changes.features.length > 0 ? (
-												release.changes.features.map((feature, index) => (
-													<div
-														key={`${release.version}-feature-${index}`}
-														className="flex items-start gap-2"
-													>
-														<Plus className="h-4 w-4 mt-0.5" />
-														<span className="text-sm">{feature}</span>
-													</div>
-												))
-											) : (
-												<div className="text-sm text-muted-foreground">
-													No new features in this release.
+									<div className="space-y-2">
+										{release.changes.features.length > 0 ? (
+											release.changes.features.map((feature, index) => (
+												<div
+													key={`${release.version}-feature-${index}`}
+													className="flex items-start gap-2"
+												>
+													<Plus className="h-4 w-4 mt-0.5" />
+													<span className="text-sm">{feature}</span>
 												</div>
-											)}
-										</TabsContent>
-
-										<TabsContent value="improvements" className="space-y-2">
-											{release.changes.improvements.length > 0 ? (
-												release.changes.improvements.map(
-													(improvement, index) => (
-														<div
-															key={`${release.version}-improvement-${index}`}
-															className="flex items-start gap-2"
-														>
-															<Zap className="h-4 w-4 mt-0.5" />
-															<span className="text-sm">{improvement}</span>
-														</div>
-													),
-												)
-											) : (
-												<div className="text-sm text-muted-foreground">
-													No improvements in this release.
-												</div>
-											)}
-										</TabsContent>
-
-										<TabsContent value="fixes" className="space-y-2">
-											{release.changes.fixes.length > 0 ? (
-												release.changes.fixes.map((fix, index) => (
-													<div
-														key={`${release.version}-fix-${index}`}
-														className="flex items-start gap-2"
-													>
-														<Bug className="h-4 w-4 mt-0.5" />
-														<span className="text-sm">{fix}</span>
-													</div>
-												))
-											) : (
-												<div className="text-sm text-muted-foreground">
-													No bug fixes in this release.
-												</div>
-											)}
-										</TabsContent>
-									</Tabs>
+											))
+										) : (
+											<div className="text-sm text-muted-foreground">
+												No new features in this release.
+											</div>
+										)}
+									</div>
 								</CardContent>
 							</Card>
 						))}
@@ -302,7 +240,7 @@ function ChangelogPage() {
 								</CardDescription>
 							</CardHeader>
 							<CardContent>
-								<Button variant="outline" className="w-full">
+								<Button variant="outline" className="w-full cursor-pointer">
 									Create issue
 									<ArrowRight className="h-4 w-4 ml-2" />
 								</Button>
@@ -318,7 +256,7 @@ function ChangelogPage() {
 								</CardDescription>
 							</CardHeader>
 							<CardContent>
-								<Button variant="outline" className="w-full">
+								<Button variant="outline" className="w-full cursor-pointer">
 									Submit request
 									<ArrowRight className="h-4 w-4 ml-2" />
 								</Button>

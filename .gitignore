@@ -41,5 +41,9 @@ yarn-error.log*
 .env*.local
 .nitro/
 
+# cursor
+.cursor/
+
 # claude
 CLAUDE.md
+.claude/

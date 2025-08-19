@@ -1,8 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useMutation } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import type { Id } from "../../convex/_generated/dataModel";
-import { useAppLoad } from "@/routes/_app";
+import { api } from "convex/_generated/api";
+import type { Id } from "convex/_generated/dataModel";
 
 import { useVoiceSession } from "@/hooks/use-voice-session";
 import { useSandboxStream } from "@/hooks/use-sandbox-stream";
@@ -13,6 +12,7 @@ import {
 	generateAppOnServer,
 	generateAppNameOnServer,
 } from "@/lib/ai/ai";
+import { modelRealtimeMini, getModelId } from "@/lib/ai/models";
 
 import CodePreview from "@/components/code-preview";
 import CodeInstruct from "@/components/code-instruct";
@@ -23,31 +23,49 @@ import {
 	updateSandboxFilesOnServer,
 } from "@/lib/sandbox";
 
-export default function VibeCoder() {
-	const { registerLoadAppHandler } = useAppLoad();
+interface AppHistoryItem {
+	_id: string;
+	title: string;
+	description: string;
+	code: string;
+	files: Array<{ path: string; content: string }>;
+	previewUrl?: string;
+	sandboxId?: string;
+	createdAt: number;
+	starred?: boolean;
+}
+
+interface VibeCoderProps {
+	project?: AppHistoryItem;
+}
+
+export default function VibeCoder({ project }: VibeCoderProps) {
+	// Essential UI state only
 	const [status, setStatus] = useState(
 		"Click the voice button to start coding.",
 	);
-	const [currentAppDescription, setCurrentAppDescription] = useState("");
 	const [followUpText, setFollowUpText] = useState("");
-	const [generatedAppCode, setGeneratedAppCode] = useState<string | null>(null);
 	const [isGeneratingCode, setIsGeneratingCode] = useState(false);
 	const [displayMode, setDisplayMode] = useState<"preview" | "code">("preview");
-	// keep error state for potential UI rendering later
-	const [, setError] = useState<string | null>(null);
 	const [isMobileCodeDrawerOpen, setIsMobileCodeDrawerOpen] = useState(false);
-	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-	// store sandboxId to reuse the same sandbox across refinements
-	const [sandboxId, setSandboxId] = useState<string | null>(null);
-	const [generatedFiles, setGeneratedFiles] = useState<
-		Array<{ path: string; content: string }>
-	>([]);
 	const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
-	// store current app history ID for updating existing apps
-	const [currentAppHistoryId, setCurrentAppHistoryId] =
-		useState<Id<"histories"> | null>(null);
-	// track whether we're in refinement mode (vs initial generation)
 	const [isRefinement, setIsRefinement] = useState(false);
+	const [selectedModel, setSelectedModel] = useState(modelRealtimeMini);
+	const [generationDescription, setGenerationDescription] = useState<string>("");
+	const [generatedContent, setGeneratedContent] = useState<{
+		code: string;
+		files: Array<{ path: string; content: string }>;
+		previewUrl?: string;
+		sandboxId?: string;
+	} | null>(null);
+
+	// Derive app data from project prop or generation state
+	const currentAppDescription = project?.description || generationDescription;
+	const generatedAppCode = project?.code || generatedContent?.code || null;
+	const generatedFiles = project?.files || generatedContent?.files || [];
+	const previewUrl = project?.previewUrl || generatedContent?.previewUrl || null;
+	const sandboxId = project?.sandboxId || generatedContent?.sandboxId || null;
+	const currentAppHistoryId = project?._id as Id<"histories"> | null;
 
 	// Track processed sandbox results to prevent duplicates
 	const processedSandboxRef = useRef<Set<string>>(new Set());
@@ -96,45 +114,21 @@ export default function VibeCoder() {
 		setIsMobileCodeDrawerOpen(false);
 	}, []);
 
-	const loadAppFromHistory = useCallback(
-		(app: {
-			_id: string;
-			title: string;
-			description: string;
-			code: string;
-			files: Array<{ path: string; content: string }>;
-			previewUrl?: string;
-			sandboxId?: string;
-		}) => {
-			setCurrentAppDescription(app.description);
-			setGeneratedAppCode(app.code);
-			setGeneratedFiles(app.files);
-			setPreviewUrl(app.previewUrl || null);
-			setSandboxId(app.sandboxId || null);
-			setCurrentAppHistoryId(app._id as Id<"histories">);
-
-			// Set selected file to index.html if available
-			const indexHtml = app.files.find((f: { path: string }) =>
+	// Set initial selected file when project loads
+	useEffect(() => {
+		if (project?.files && project.files.length > 0) {
+			const indexHtml = project.files.find((f: { path: string }) =>
 				/(^|\/)index\.html$/i.test(f.path),
 			);
 			if (indexHtml) {
 				setSelectedFilePath(indexHtml.path);
-			} else if (app.files.length > 0) {
-				setSelectedFilePath(app.files[0].path);
+			} else {
+				setSelectedFilePath(project.files[0].path);
 			}
-
-			setStatus(`Loaded "${app.title}" from history.`);
-			appendToConsole("info", `Loaded "${app.title}" from history.`);
-		},
-		[appendToConsole],
-	);
-
-	// Register the loadAppFromHistory function with the context
-	useEffect(() => {
-		if (registerLoadAppHandler) {
-			registerLoadAppHandler(loadAppFromHistory);
+			setStatus(`Loaded "${project.title}" from history.`);
+			appendToConsole("info", `Loaded "${project.title}" from history.`);
 		}
-	}, [registerLoadAppHandler, loadAppFromHistory]);
+	}, [project, appendToConsole]);
 
 	const saveAppToHistory = useCallback(
 		async (
@@ -149,7 +143,7 @@ export default function VibeCoder() {
 				const appName = await generateAppNameOnServer({ data: description });
 
 				// Save to history
-				const historyId = await createAppHistory({
+				await createAppHistory({
 					title: appName,
 					description,
 					code,
@@ -158,7 +152,7 @@ export default function VibeCoder() {
 					sandboxId,
 				});
 
-				setCurrentAppHistoryId(historyId);
+				// App is now saved to Convex, no local state needed
 				appendToConsole("info", `Saved "${appName}" to history.`);
 			} catch (error) {
 				console.error("Failed to save app to history:", error);
@@ -177,10 +171,8 @@ export default function VibeCoder() {
 			}
 			setStatus("Generating your app...");
 			setIsGeneratingCode(true);
-			setGeneratedAppCode(null);
-			setPreviewUrl(null);
 			setFollowUpText("");
-			setError(null);
+			setGenerationDescription(description); // Store the description for later use
 			// Clear processed sandbox results for new generation
 			processedSandboxRef.current.clear();
 			lastStatusMessageRef.current = "";
@@ -188,6 +180,15 @@ export default function VibeCoder() {
 
 			try {
 				const filesObject = await generateAppOnServer({ data: description });
+
+				// Store generated content for immediate preview
+				const indexHtml = filesObject.files.find((f: { path: string }) =>
+					/(^|\/)index\.html$/i.test(f.path),
+				);
+				setGeneratedContent({
+					code: indexHtml?.content || JSON.stringify(filesObject, null, 2),
+					files: filesObject.files as Array<{ path: string; content: string }>,
+				});
 
 				// Start sandbox creation
 				appendToConsole(
@@ -202,19 +203,11 @@ export default function VibeCoder() {
 					ports: [3000, 5173], // Common dev server ports
 				});
 
-				// Prepare code view - this runs immediately while sandbox streams
-				setGeneratedFiles(
-					filesObject.files as Array<{ path: string; content: string }>,
-				);
-				const indexHtml = filesObject.files.find((f: { path: string }) =>
-					/(^|\/)index\.html$/i.test(f.path),
-				);
-				if (indexHtml && typeof indexHtml.content === "string") {
-					setGeneratedAppCode(indexHtml.content);
+				// Set selected file for code view
+				if (indexHtml) {
 					setSelectedFilePath(indexHtml.path);
-				} else {
-					setGeneratedAppCode(JSON.stringify(filesObject, null, 2));
-					setSelectedFilePath(filesObject.files?.[0]?.path ?? null);
+				} else if (filesObject.files.length > 0) {
+					setSelectedFilePath(filesObject.files[0]?.path ?? null);
 				}
 
 				// The rest (URL, sandboxId, save to history) will be handled by useEffect
@@ -222,7 +215,6 @@ export default function VibeCoder() {
 			} catch (e) {
 				const msg = e instanceof Error ? e.message : "Unknown error";
 				setStatus(`Error generating app: ${msg}`);
-				setError(msg);
 				appendToConsole("error", `Error generating app: ${msg}`, "failed");
 				setIsGeneratingCode(false);
 			}
@@ -260,8 +252,12 @@ export default function VibeCoder() {
 			}
 			processedSandboxRef.current.add(resultKey);
 
-			setPreviewUrl(url);
-			setSandboxId(sandboxId);
+			// Update generated content with preview URL and sandbox ID
+			setGeneratedContent(prev => prev ? {
+				...prev,
+				previewUrl: url,
+				sandboxId,
+			} : null);
 
 			if (isRefinement) {
 				setStatus("App refined successfully! Previewing updates.");
@@ -289,15 +285,18 @@ export default function VibeCoder() {
 					/(^|\/)index\.html$/i.test(f.path),
 				);
 
-				saveAppToHistory(
-					currentAppDescription,
-					indexHtml?.content || generatedAppCode || "",
-					generatedFiles,
-					url,
-					sandboxId,
-				).catch((e) => {
-					console.error("Failed to save to history:", e);
-				});
+				// Save to history using the actual generation description
+				if (generationDescription.trim()) {
+					saveAppToHistory(
+						generationDescription,
+						indexHtml?.content || generatedAppCode || "",
+						generatedFiles,
+						url,
+						sandboxId,
+					).catch((e) => {
+						console.error("Failed to save to history:", e);
+					});
+				}
 			}
 
 			setIsGeneratingCode(false);
@@ -309,7 +308,6 @@ export default function VibeCoder() {
 				: `Sandbox Error: ${sandboxState.error}`;
 			setStatus(errorMessage);
 			appendToConsole("error", sandboxState.error, "failed");
-			setError(sandboxState.error);
 			setIsGeneratingCode(false);
 			setIsRefinement(false); // Reset refinement mode on error
 		}
@@ -318,7 +316,7 @@ export default function VibeCoder() {
 		appendToConsole,
 		saveAppToHistory,
 		updateAppHistory,
-		currentAppDescription,
+		generationDescription,
 		generatedAppCode,
 		generatedFiles,
 		currentAppHistoryId,
@@ -332,8 +330,7 @@ export default function VibeCoder() {
 	const handleTranscriptReceived = useCallback(
 		(transcript: string, isFinal: boolean) => {
 			if (isFinal && transcript) {
-				setCurrentAppDescription((prev) => `${prev}${transcript} `.trim());
-			} else if (transcript) {
+				// Transcript handling - could store in temporary state if needed
 			}
 		},
 		[],
@@ -352,7 +349,6 @@ export default function VibeCoder() {
 					description = (args as { description: string }).description;
 				}
 				if (description) {
-					setCurrentAppDescription(description);
 					setStatus("Received app description. Generating your app...");
 					triggerAppGeneration(description);
 				}
@@ -394,7 +390,10 @@ export default function VibeCoder() {
 		audioRef: voiceSessionAudioRef,
 	} = useVoiceSession({
 		openAIApiKey: import.meta.env.VITE_OPENAI_API_KEY,
-		sessionParams: vibeCoderSessionParams,
+		sessionParams: {
+			...vibeCoderSessionParams,
+			model: getModelId(selectedModel),
+		},
 		onStatusUpdate: handleStatusUpdate,
 		onTranscriptReceived: handleTranscriptReceived,
 		onFunctionCallArguments: handleFunctionCallArguments,
@@ -424,7 +423,6 @@ export default function VibeCoder() {
 
 		setStatus("Refining your app based on instructions...");
 		setIsGeneratingCode(true);
-		setError(null);
 		appendToConsole("info", "Refinement process started.");
 
 		const refinementDescription = appRefinemenPrompt(generatedAppCode, message);
@@ -435,19 +433,14 @@ export default function VibeCoder() {
 			});
 			appendToConsole("info", "App refined successfully. Updating sandbox...");
 
-			// Update the generated files and code immediately so user can see changes
-			setGeneratedFiles(
-				filesObject.files as Array<{ path: string; content: string }>,
-			);
+			// Update selected file for the refined app
 			const indexHtml = filesObject.files.find((f: { path: string }) =>
 				/(^|\/)index\.html$/i.test(f.path),
 			);
-			if (indexHtml && typeof indexHtml.content === "string") {
-				setGeneratedAppCode(indexHtml.content);
+			if (indexHtml) {
 				setSelectedFilePath(indexHtml.path);
-			} else {
-				setGeneratedAppCode(JSON.stringify(filesObject, null, 2));
-				setSelectedFilePath(filesObject.files?.[0]?.path ?? null);
+			} else if (filesObject.files.length > 0) {
+				setSelectedFilePath(filesObject.files[0]?.path ?? null);
 			}
 
 			if (sandboxId) {
@@ -489,7 +482,6 @@ export default function VibeCoder() {
 				);
 				const r = await getSandboxUrlOnServer({ data: { sandboxId, port } });
 
-				setPreviewUrl(r.url);
 				setStatus("App refined successfully! Previewing updates.");
 				appendToConsole("info", `Sandbox updated at ${r.url}`);
 				setIsGeneratingCode(false);
@@ -530,7 +522,6 @@ export default function VibeCoder() {
 			const msg =
 				e instanceof Error ? e.message : "Unknown error during refinement";
 			setStatus(`Error refining app: ${msg}`);
-			setError(msg);
 			appendToConsole("error", `Error refining app: ${msg}`, "failed");
 			setIsGeneratingCode(false);
 			setIsRefinement(false);
@@ -560,6 +551,8 @@ export default function VibeCoder() {
 						isMuted={voiceSessionIsMuted}
 						onToggleMute={toggleMute}
 						onSendMessage={handleFollowUpSubmit}
+						selectedModel={selectedModel}
+						onModelChange={setSelectedModel}
 					/>
 					{(isGeneratingCode || generatedAppCode) && (
 						<CodePreview

@@ -9,9 +9,10 @@ import {
 	Check,
 } from "lucide-react";
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import type { Id } from "../../convex/_generated/dataModel";
+import { api } from "convex/_generated/api";
+import type { Id } from "convex/_generated/dataModel";
 import { toast } from "sonner";
+import { useRouter } from "@tanstack/react-router";
 
 import {
 	DropdownMenu,
@@ -57,12 +58,9 @@ interface AppHistoryItem {
 	visibility?: "private" | "public";
 }
 
-interface NavProjectsProps {
-	onLoadApp?: (app: AppHistoryItem) => void;
-}
-
-export function NavProjects({ onLoadApp }: NavProjectsProps) {
+export function NavProjects() {
 	const { isMobile } = useSidebar();
+	const router = useRouter();
 	const [editingId, setEditingId] = useState<Id<"histories"> | null>(null);
 	const [editingTitle, setEditingTitle] = useState("");
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -132,9 +130,7 @@ export function NavProjects({ onLoadApp }: NavProjectsProps) {
 	};
 
 	const handleLoadApp = (app: AppHistoryItem) => {
-		if (onLoadApp) {
-			onLoadApp(app);
-		}
+		router.navigate({ to: `/projects/${app._id}` });
 	};
 
 	const handleShare = (
@@ -154,7 +150,7 @@ export function NavProjects({ onLoadApp }: NavProjectsProps) {
 					toast.error("Failed to copy link");
 				});
 		} else {
-			toast("App is now private");
+			toast("Project is now private");
 		}
 	};
 
@@ -169,7 +165,7 @@ export function NavProjects({ onLoadApp }: NavProjectsProps) {
 						<button
 							type="button"
 							onClick={() => handleLoadApp(app)}
-							className="w-full justify-start"
+							className="w-full justify-start cursor-pointer"
 						>
 							<Code className="h-4 w-4" />
 							{editingId === app._id ? (
@@ -266,19 +262,7 @@ export function NavProjects({ onLoadApp }: NavProjectsProps) {
 			{/* Regular History Section */}
 			<SidebarGroup className="group-data-[collapsible=icon]:hidden">
 				<SidebarGroupLabel>History</SidebarGroupLabel>
-				<SidebarMenu>
-					{renderAppList(regularApps)}
-					{appHistory.length === 0 && (
-						<SidebarMenuItem>
-							<SidebarMenuButton
-								disabled
-								className="text-sidebar-foreground/70"
-							>
-								<span className="text-xs">No projects yet</span>
-							</SidebarMenuButton>
-						</SidebarMenuItem>
-					)}
-				</SidebarMenu>
+				<SidebarMenu>{renderAppList(regularApps)}</SidebarMenu>
 			</SidebarGroup>
 
 			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

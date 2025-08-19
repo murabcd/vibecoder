@@ -1,9 +1,16 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_app/projects")({
 	component: RouteComponent,
 });
 
 function RouteComponent() {
-	return <div>Hello "/projects"!</div>;
+	return (
+		<div className="flex flex-col h-full">
+			{/* Projects Content */}
+			<div className="flex-1 overflow-auto">
+				<Outlet />
+			</div>
+		</div>
+	);
 }
