@@ -3,6 +3,7 @@ import { useQuery } from "convex/react";
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import VibeCoder from "@/components/coder";
+import { NotFound } from "@/components/not-found";
 
 export const Route = createFileRoute("/_app/projects/$projectId")({
 	component: RouteComponent,
@@ -21,7 +22,7 @@ function RouteComponent() {
 	});
 
 	if (project === null) {
-		return <div>Project not found</div>;
+		return <NotFound />;
 	}
 
 	return <VibeCoder key={projectId} project={project} />;

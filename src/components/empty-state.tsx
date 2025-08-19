@@ -29,7 +29,11 @@ export function EmptyState({
 			</p>
 			{onAction && (
 				<div className="mt-6">
-					<Button onClick={onAction} disabled={isLoading}>
+					<Button
+						onClick={onAction}
+						disabled={isLoading}
+						className="cursor-pointer"
+					>
 						{actionLabel}
 					</Button>
 				</div>

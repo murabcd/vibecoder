@@ -62,11 +62,7 @@ export function NavMain({
 					>
 						<SidebarMenuItem>
 							{isCollapsed ? (
-								<SidebarMenuButton
-									tooltip={item.title}
-									asChild
-									isActive={isMainItemActive(item)}
-								>
+								<SidebarMenuButton tooltip={item.title} asChild>
 									<a href={item.url}>
 										{item.icon && <item.icon />}
 										<span>{item.title}</span>
@@ -74,10 +70,7 @@ export function NavMain({
 								</SidebarMenuButton>
 							) : (
 								<CollapsibleTrigger asChild>
-									<SidebarMenuButton
-										tooltip={item.title}
-										isActive={isMainItemActive(item)}
-									>
+									<SidebarMenuButton tooltip={item.title}>
 										{item.icon && <item.icon />}
 										<span>{item.title}</span>
 										<ChevronRight className="absolute right-2 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden" />

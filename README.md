@@ -24,7 +24,6 @@
 - [Tanstack Start](https://tanstack.com/start/latest)
   - File-based routing, type-safe from server to client
   - Built on Vite for a lightning-fast HMR development experience
-  - Server-side rendering and client-side hydration
 - [OpenAI](https://openai.com/)
   - Leverages OpenAI's powerful models for chat generation.
   - Direct API calls for text generation and other AI features.
