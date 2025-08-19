@@ -51,7 +51,8 @@ export default function VibeCoder({ project }: VibeCoderProps) {
 	const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
 	const [isRefinement, setIsRefinement] = useState(false);
 	const [selectedModel, setSelectedModel] = useState(modelRealtimeMini);
-	const [generationDescription, setGenerationDescription] = useState<string>("");
+	const [generationDescription, setGenerationDescription] =
+		useState<string>("");
 	const [generatedContent, setGeneratedContent] = useState<{
 		code: string;
 		files: Array<{ path: string; content: string }>;
@@ -63,7 +64,8 @@ export default function VibeCoder({ project }: VibeCoderProps) {
 	const currentAppDescription = project?.description || generationDescription;
 	const generatedAppCode = project?.code || generatedContent?.code || null;
 	const generatedFiles = project?.files || generatedContent?.files || [];
-	const previewUrl = project?.previewUrl || generatedContent?.previewUrl || null;
+	const previewUrl =
+		project?.previewUrl || generatedContent?.previewUrl || null;
 	const sandboxId = project?.sandboxId || generatedContent?.sandboxId || null;
 	const currentAppHistoryId = project?._id as Id<"histories"> | null;
 
@@ -253,11 +255,15 @@ export default function VibeCoder({ project }: VibeCoderProps) {
 			processedSandboxRef.current.add(resultKey);
 
 			// Update generated content with preview URL and sandbox ID
-			setGeneratedContent(prev => prev ? {
-				...prev,
-				previewUrl: url,
-				sandboxId,
-			} : null);
+			setGeneratedContent((prev) =>
+				prev
+					? {
+							...prev,
+							previewUrl: url,
+							sandboxId,
+						}
+					: null,
+			);
 
 			if (isRefinement) {
 				setStatus("App refined successfully! Previewing updates.");

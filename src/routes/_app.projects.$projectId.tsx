@@ -6,6 +6,11 @@ import VibeCoder from "@/components/coder";
 
 export const Route = createFileRoute("/_app/projects/$projectId")({
 	component: RouteComponent,
+	validateSearch: (search: Record<string, unknown>) => {
+		return {
+			from: (search.from as string) || "all",
+		};
+	},
 });
 
 function RouteComponent() {

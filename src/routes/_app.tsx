@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import { createFileRoute, Outlet, useLocation } from "@tanstack/react-router";
+import { useQuery } from "convex/react";
+import { api } from "convex/_generated/api";
+import type { Id } from "convex/_generated/dataModel";
 
 import { AppSidebar } from "@/components/app-sidebar";
 import {
@@ -39,11 +42,26 @@ function useSidebarState() {
 	return { defaultOpen, isInitialized };
 }
 
-
 function AppBreadcrumbs() {
 	const location = useLocation();
+	const searchParams = new URLSearchParams(location.search);
+	const fromParam = searchParams.get("from") || "all";
 
 	const pathSegments = location.pathname.split("/").filter(Boolean);
+
+	// Check if this is a direct project route (/projects/projectId)
+	const isDirectProjectRoute =
+		pathSegments.length === 2 &&
+		pathSegments[0] === "projects" &&
+		pathSegments[1] !== "all" &&
+		pathSegments[1] !== "recent";
+	const projectId = isDirectProjectRoute ? pathSegments[1] : null;
+
+	// Fetch project data if this is a direct project route
+	const project = useQuery(
+		api.histories.get,
+		projectId ? { id: projectId as Id<"histories"> } : "skip",
+	);
 
 	if (pathSegments.length === 0) return null;
 
@@ -61,7 +79,10 @@ function AppBreadcrumbs() {
 		"api-keys": "API keys",
 	};
 
-	const getDisplayName = (segment: string) => {
+	const getDisplayName = (segment: string, isProjectId = false) => {
+		if (isProjectId && project) {
+			return project.title || "Untitled Project";
+		}
 		return (
 			DISPLAY_NAMES[segment] ||
 			segment.charAt(0).toUpperCase() + segment.slice(1)
@@ -84,6 +105,57 @@ function AppBreadcrumbs() {
 	);
 
 	if (isMainSection) {
+		// Special handling for direct project routes
+		if (isDirectProjectRoute && project) {
+			const fromPath = fromParam === "recent" ? "/projects/recent" : "/projects/all";
+			const fromDisplayName = fromParam === "recent" ? "Recent" : "All";
+			
+			const breadcrumbItems = [
+				{
+					path: "/projects/all",
+					segment: "projects",
+					isLast: false,
+					displayName: "Projects",
+				},
+				{
+					path: fromPath,
+					segment: fromParam,
+					isLast: false,
+					displayName: fromDisplayName,
+				},
+				{
+					path: location.pathname,
+					segment: projectId,
+					isLast: true,
+					displayName: getDisplayName(projectId || "", true),
+				},
+			];
+
+			return (
+				<Breadcrumb>
+					<BreadcrumbList>
+						{breadcrumbItems.map((item, index) => (
+							<div
+								key={`${item.path}-${item.segment}-${index}`}
+								className="flex items-center gap-1.5"
+							>
+								{index > 0 && <BreadcrumbSeparator />}
+								<BreadcrumbItem>
+									{item.isLast ? (
+										<BreadcrumbPage>{item.displayName}</BreadcrumbPage>
+									) : (
+										<BreadcrumbLink href={item.path}>
+											{item.displayName}
+										</BreadcrumbLink>
+									)}
+								</BreadcrumbItem>
+							</div>
+						))}
+					</BreadcrumbList>
+				</Breadcrumb>
+			);
+		}
+
 		const breadcrumbItems = pathSegments.map((segment, index) => {
 			const path = `/${pathSegments.slice(0, index + 1).join("/")}`;
 			const isLast = index === pathSegments.length - 1;

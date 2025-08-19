@@ -30,6 +30,7 @@ function RouteComponent() {
 	const handleProjectClick = (app: AppHistoryItem) => {
 		navigate({
 			to: `/projects/${app._id}`,
+			search: { from: "all" },
 		});
 	};
 

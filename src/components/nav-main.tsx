@@ -38,9 +38,11 @@ export function NavMain({
 	const location = useLocation();
 	const isCollapsed = state === "collapsed";
 
-	const isMainItemActive = (item: typeof items[0]) => {
-		return location.pathname.startsWith(item.url) || 
-			item.items?.some(subItem => location.pathname === subItem.url);
+	const isMainItemActive = (item: (typeof items)[0]) => {
+		return (
+			location.pathname.startsWith(item.url) ||
+			item.items?.some((subItem) => location.pathname === subItem.url)
+		);
 	};
 
 	const isSubItemActive = (subItem: { url: string }) => {
@@ -60,8 +62,8 @@ export function NavMain({
 					>
 						<SidebarMenuItem>
 							{isCollapsed ? (
-								<SidebarMenuButton 
-									tooltip={item.title} 
+								<SidebarMenuButton
+									tooltip={item.title}
 									asChild
 									isActive={isMainItemActive(item)}
 								>
@@ -72,7 +74,7 @@ export function NavMain({
 								</SidebarMenuButton>
 							) : (
 								<CollapsibleTrigger asChild>
-									<SidebarMenuButton 
+									<SidebarMenuButton
 										tooltip={item.title}
 										isActive={isMainItemActive(item)}
 									>
@@ -87,7 +89,7 @@ export function NavMain({
 									<SidebarMenuSub>
 										{item.items?.map((subItem) => (
 											<SidebarMenuSubItem key={subItem.title}>
-												<SidebarMenuSubButton 
+												<SidebarMenuSubButton
 													asChild
 													isActive={isSubItemActive(subItem)}
 												>
