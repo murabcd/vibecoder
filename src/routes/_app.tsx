@@ -59,8 +59,8 @@ function AppBreadcrumbs() {
 
 	// Fetch project data if this is a direct project route
 	const project = useQuery(
-		api.histories.get,
-		projectId ? { id: projectId as Id<"histories"> } : "skip",
+		api.projects.get,
+		projectId ? { id: projectId as Id<"projects"> } : "skip",
 	);
 
 	if (pathSegments.length === 0) return null;
@@ -107,9 +107,10 @@ function AppBreadcrumbs() {
 	if (isMainSection) {
 		// Special handling for direct project routes
 		if (isDirectProjectRoute && project) {
-			const fromPath = fromParam === "recent" ? "/projects/recent" : "/projects/all";
+			const fromPath =
+				fromParam === "recent" ? "/projects/recent" : "/projects/all";
 			const fromDisplayName = fromParam === "recent" ? "Recent" : "All";
-			
+
 			const breadcrumbItems = [
 				{
 					path: "/projects/all",

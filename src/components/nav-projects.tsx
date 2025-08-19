@@ -46,7 +46,7 @@ import {
 import { Input } from "@/components/ui/input";
 
 interface AppHistoryItem {
-	_id: Id<"histories">;
+	_id: Id<"projects">;
 	title: string;
 	description: string;
 	code: string;
@@ -61,16 +61,16 @@ interface AppHistoryItem {
 export function NavProjects() {
 	const { isMobile } = useSidebar();
 	const router = useRouter();
-	const [editingId, setEditingId] = useState<Id<"histories"> | null>(null);
+	const [editingId, setEditingId] = useState<Id<"projects"> | null>(null);
 	const [editingTitle, setEditingTitle] = useState("");
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [appToDelete, setAppToDelete] = useState<AppHistoryItem | null>(null);
 
 	// Convex queries and mutations
-	const appHistory = useQuery(api.histories.list) ?? [];
-	const removeApp = useMutation(api.histories.remove);
-	const updateAppTitle = useMutation(api.histories.updateTitle);
-	const toggleStarred = useMutation(api.histories.toggleStarred);
+	const appHistory = useQuery(api.projects.list) ?? [];
+	const removeApp = useMutation(api.projects.remove);
+	const updateAppTitle = useMutation(api.projects.updateTitle);
+	const toggleStarred = useMutation(api.projects.toggleStarred);
 
 	// Separate favorite and non-favorite apps
 	const favoriteApps = appHistory.filter((app) => app.starred);
@@ -121,7 +121,7 @@ export function NavProjects() {
 		}
 	};
 
-	const handleToggleStarred = async (id: Id<"histories">) => {
+	const handleToggleStarred = async (id: Id<"projects">) => {
 		try {
 			await toggleStarred({ id });
 		} catch (error) {

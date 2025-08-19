@@ -3,13 +3,7 @@ import { useMutation } from "convex/react";
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { toast } from "sonner";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,7 +39,7 @@ import { RenameModal } from "@/components/rename-modal";
 
 interface ProjectCardProps {
 	project: {
-		_id: Id<"histories">;
+		_id: Id<"projects">;
 		title: string;
 		description: string;
 		code: string;
@@ -60,8 +54,8 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project, onProjectClick }: ProjectCardProps) {
-	const removeApp = useMutation(api.histories.remove);
-	const toggleStarred = useMutation(api.histories.toggleStarred);
+	const removeApp = useMutation(api.projects.remove);
+	const toggleStarred = useMutation(api.projects.toggleStarred);
 
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [renameDialogOpen, setRenameDialogOpen] = useState(false);

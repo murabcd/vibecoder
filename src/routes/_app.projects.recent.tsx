@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/empty-state";
 import { ProjectCard } from "@/components/project-card";
 
 interface AppHistoryItem {
-	_id: Id<"histories">;
+	_id: Id<"projects">;
 	title: string;
 	description: string;
 	code: string;
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_app/projects/recent")({
 
 function RouteComponent() {
 	const navigate = useNavigate();
-	const allProjects = useQuery(api.histories.list) ?? [];
+	const allProjects = useQuery(api.projects.list) ?? [];
 
 	// Show only the 12 most recent projects
 	const recentProjects = allProjects

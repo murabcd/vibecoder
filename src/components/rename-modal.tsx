@@ -24,7 +24,7 @@ import type { Id } from "convex/_generated/dataModel";
 interface RenameModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	id: Id<"histories">;
+	id: Id<"projects">;
 	title: string;
 }
 
@@ -34,7 +34,7 @@ export const RenameModal = ({
 	id,
 	title,
 }: RenameModalProps) => {
-	const updateAppTitle = useMutation(api.histories.updateTitle);
+	const updateAppTitle = useMutation(api.projects.updateTitle);
 
 	const [newTitle, setNewTitle] = useState(title);
 	const [pending, setPending] = useState(false);
@@ -54,7 +54,7 @@ export const RenameModal = ({
 			});
 			toast.success("Project renamed");
 			onClose();
-		} catch (error) {
+		} catch (_error) {
 			toast.error("Failed to rename project");
 		} finally {
 			setPending(false);

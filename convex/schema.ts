@@ -2,7 +2,7 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
-	histories: defineTable({
+	projects: defineTable({
 		title: v.string(),
 		description: v.string(),
 		code: v.string(),

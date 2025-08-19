@@ -16,8 +16,8 @@ export const Route = createFileRoute("/_app/projects/$projectId")({
 function RouteComponent() {
 	const { projectId } = Route.useParams();
 
-	const project = useQuery(api.histories.get, {
-		id: projectId as Id<"histories">,
+	const project = useQuery(api.projects.get, {
+		id: projectId as Id<"projects">,
 	});
 
 	if (project === null) {

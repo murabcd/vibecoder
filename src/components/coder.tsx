@@ -67,7 +67,7 @@ export default function VibeCoder({ project }: VibeCoderProps) {
 	const previewUrl =
 		project?.previewUrl || generatedContent?.previewUrl || null;
 	const sandboxId = project?.sandboxId || generatedContent?.sandboxId || null;
-	const currentAppHistoryId = project?._id as Id<"histories"> | null;
+	const currentAppHistoryId = project?._id as Id<"projects"> | null;
 
 	// Track processed sandbox results to prevent duplicates
 	const processedSandboxRef = useRef<Set<string>>(new Set());
@@ -75,8 +75,8 @@ export default function VibeCoder({ project }: VibeCoderProps) {
 	const lastStatusMessageRef = useRef<string>("");
 
 	// Convex mutations
-	const createAppHistory = useMutation(api.histories.create);
-	const updateAppHistory = useMutation(api.histories.update);
+	const createAppHistory = useMutation(api.projects.create);
+	const updateAppHistory = useMutation(api.projects.update);
 
 	// Streaming sandbox creation
 	const { state: sandboxState, startSandbox } = useSandboxStream();

@@ -3,12 +3,12 @@ import { v } from "convex/values";
 
 export const list = query({
 	handler: async (ctx) => {
-		return await ctx.db.query("histories").order("desc").collect();
+		return await ctx.db.query("projects").order("desc").collect();
 	},
 });
 
 export const get = query({
-	args: { id: v.id("histories") },
+	args: { id: v.id("projects") },
 	handler: async (ctx, args) => {
 		return await ctx.db.get(args.id);
 	},
@@ -29,7 +29,7 @@ export const create = mutation({
 		sandboxId: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
-		return await ctx.db.insert("histories", {
+		return await ctx.db.insert("projects", {
 			title: args.title,
 			description: args.description,
 			code: args.code,
@@ -43,7 +43,7 @@ export const create = mutation({
 
 export const update = mutation({
 	args: {
-		id: v.id("histories"),
+		id: v.id("projects"),
 		title: v.optional(v.string()),
 		description: v.optional(v.string()),
 		code: v.optional(v.string()),
@@ -69,7 +69,7 @@ export const update = mutation({
 });
 
 export const remove = mutation({
-	args: { id: v.id("histories") },
+	args: { id: v.id("projects") },
 	handler: async (ctx, args) => {
 		await ctx.db.delete(args.id);
 	},
@@ -77,7 +77,7 @@ export const remove = mutation({
 
 export const updateTitle = mutation({
 	args: {
-		id: v.id("histories"),
+		id: v.id("projects"),
 		title: v.string(),
 	},
 	handler: async (ctx, args) => {
@@ -88,7 +88,7 @@ export const updateTitle = mutation({
 // Toggle starred status for an app
 export const toggleStarred = mutation({
 	args: {
-		id: v.id("histories"),
+		id: v.id("projects"),
 	},
 	handler: async (ctx, args) => {
 		const app = await ctx.db.get(args.id);
@@ -102,7 +102,7 @@ export const toggleStarred = mutation({
 
 export const updateVisibility = mutation({
 	args: {
-		id: v.id("histories"),
+		id: v.id("projects"),
 		visibility: v.union(v.literal("private"), v.literal("public")),
 	},
 	handler: async (ctx, args) => {
