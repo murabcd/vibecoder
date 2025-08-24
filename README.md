@@ -7,9 +7,9 @@
   Realtime Voice AI VibeCoder Built With Tanstack Start and OpenAI.
 </p>
 
-<p align="center">
-❗ This project is in very early development and lots of things will change.
-</p>
+<div align="center">
+❗️ This project is in very early development and lots of things will change❗️
+</div>
 
 <p align="center">
   <a href="#features"><strong>Features</strong></a> ·
@@ -24,6 +24,9 @@
 - [Tanstack Start](https://tanstack.com/start/latest)
   - File-based routing, type-safe from server to client
   - Built on Vite for a lightning-fast HMR development experience
+- [OpenAI Agent SDK](https://openai.github.io/openai-agents-js/guides/voice-agents/)
+  - Realtime voice agents with seamless audio streaming
+  - Sequential agent handoffs according to a defined agent graph
 - [OpenAI](https://openai.com/)
   - Leverages OpenAI's powerful models for chat generation.
   - Direct API calls for text generation and other AI features.
@@ -38,8 +41,14 @@
 
 This app utilizes the [OpenAI API](https://openai.com/) for its AI capabilities. It is configured to use the following OpenAI models:
 
-- Model (`gpt-4o-mini-realtime-preview`): Higher quality conversational model with higher latency.
-- Model (`gpt-4.1`): General purpose model optimized for code generation.
+- Realtime Model (`gpt-4o-mini-realtime-preview`): Higher quality conversational model with higher latency
+- Realtime Mini Model (`gpt-4o-realtime-preview`): Optimized for low-latency conversational responses
+- Chat Model (`gpt-4.1`): General purpose GPT-4.1 model
+- Chat Mini Model (`gpt-4.1-mini`): Smaller variant of GPT-4.1
+- Transcribe Model (`gpt-4o-transcribe`): Optimized for speech-to-text transcription
+- Transcribe Mini Model (`gpt-4o-mini-transcribe`): Optimized for low-latency speech-to-text transcription
+
+The app leverages these models through the [OpenAI Agent SDK](https://openai.github.io/openai-agents-js/guides/voice-agents/) to create a sophisticated voice-driven code generation experience with real-time audio processing and intelligent agent handoffs.
 
 ## Deploy your own
 

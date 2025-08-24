@@ -1,7 +1,6 @@
 import { createServerFileRoute } from "@tanstack/react-start/server";
 import { SandboxFilesPayloadSchema, type SandboxEvent } from "@/lib/sandbox";
 
-// Utility functions (duplicated to avoid import issues)
 function isSafeRelativePath(path: string): boolean {
 	if (typeof path !== "string" || path.trim() === "") return false;
 	if (path.startsWith("/")) return false;
@@ -79,7 +78,6 @@ export const ServerRoute = createServerFileRoute("/api/sandbox/stream").methods(
 							try {
 								const { Sandbox } = await import("@vercel/sandbox");
 
-								// Helper to send events
 								const sendEvent = (event: SandboxEvent) => {
 									controller.enqueue(
 										encoder.encode(`data: ${JSON.stringify(event)}\n\n`),
@@ -99,7 +97,6 @@ export const ServerRoute = createServerFileRoute("/api/sandbox/stream").methods(
 									progress: 20,
 								});
 
-								// Detect preferred app port from package.json if present
 								const pkgFile = data.files.find((f) =>
 									/(^|\/)package\.json$/i.test(f.path),
 								);
@@ -124,11 +121,20 @@ export const ServerRoute = createServerFileRoute("/api/sandbox/stream").methods(
 									message: "Creating sandbox environment...",
 									progress: 30,
 								});
+
 								const sandbox = await Sandbox.create({
 									timeout: data.timeout,
 									ports,
 									runtime: "node22",
-									// Note: Not specifying resources for Hobby plan to conserve allocation
+								}).catch((error) => {
+									console.error("Sandbox creation failed:", error);
+									console.error("Error details:", {
+										message: error.message,
+										status: error.status,
+										code: error.code,
+										stack: error.stack,
+									});
+									throw error;
 								});
 
 								sendEvent({

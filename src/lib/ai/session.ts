@@ -3,10 +3,10 @@ import { OpenAI } from "openai";
 
 import { env } from "@/env";
 import {
-	vibeCoderPrompt,
-	appGenerationPrompt,
+	createAgent,
+	createAppPrompt,
+	refineAppPrompt,
 	appNameGenerationPrompt,
-	appRefinemenPrompt,
 } from "@/lib/ai/prompts";
 import { getModelId, modelChat, modelRealtimeMini } from "@/lib/ai/models";
 import { SandboxFilesPayloadSchema } from "@/lib/sandbox";
@@ -32,7 +32,7 @@ export function isNetworkError(error: Error): boolean {
 }
 
 export const vibeCoderSessionParams = {
-	instructions: vibeCoderPrompt,
+	instructions: createAgent,
 	model: getModelId(modelRealtimeMini),
 	voice: "shimmer",
 	tools: [
@@ -62,7 +62,8 @@ export const vibeCoderSessionParams = {
 				properties: {
 					refinementMessage: {
 						type: "string",
-						description: "The instructions for how to refine or modify the app.",
+						description:
+							"The instructions for how to refine or modify the app.",
 					},
 				},
 				required: ["refinementMessage"],
@@ -97,7 +98,7 @@ export const generateAppOnServer = createServerFn({ method: "POST" })
 				const stream = await client.responses.create({
 					model: getModelId(modelChat),
 					input: [
-						{ role: "system", content: appGenerationPrompt },
+						{ role: "system", content: createAppPrompt },
 						{ role: "user", content: appDescription },
 					],
 					stream: true,
@@ -264,7 +265,7 @@ export const generateAppRefinementOnServer = createServerFn({ method: "POST" })
 			const baseDelay = 2000;
 			let lastError: Error | null = null;
 
-			const refinementDescription = appRefinemenPrompt(
+			const refinementDescription = refineAppPrompt(
 				data.currentCode,
 				data.refinementMessage,
 			);
@@ -274,7 +275,7 @@ export const generateAppRefinementOnServer = createServerFn({ method: "POST" })
 					const stream = await client.responses.create({
 						model: getModelId(modelChat),
 						input: [
-							{ role: "system", content: appGenerationPrompt },
+							{ role: "system", content: createAppPrompt },
 							{ role: "user", content: refinementDescription },
 						],
 						stream: true,
@@ -354,4 +355,4 @@ export const generateAppRefinementOnServer = createServerFn({ method: "POST" })
 		},
 	);
 
-export { appRefinemenPrompt };
+export { refineAppPrompt };

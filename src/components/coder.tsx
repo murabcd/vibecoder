@@ -3,16 +3,16 @@ import { useMutation } from "convex/react";
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 
-import { useVoiceSession } from "@/hooks/use-voice-session";
+import { useRealtimeSession } from "@/lib/use-realtime-session";
 import { useSandboxStream } from "@/hooks/use-sandbox-stream";
 
 import {
-	vibeCoderSessionParams,
 	generateAppOnServer,
 	generateAppNameOnServer,
 	generateAppRefinementOnServer,
 } from "@/lib/ai/session";
-import { modelRealtimeMini, getModelId } from "@/lib/ai/models";
+import { modelRealtimeMini } from "@/lib/ai/models";
+import { vibeCoderScenario } from "@/agents";
 
 import CodePreview from "@/components/code-preview";
 import CodeInstruct from "@/components/code-instruct";
@@ -164,6 +164,7 @@ export default function VibeCoder({ project }: VibeCoderProps) {
 		[createAppHistory, appendToConsole],
 	);
 
+	// Expose triggerAppGeneration to window for agent tools to use
 	const triggerAppGeneration = useCallback(
 		async (description: string) => {
 			if (!description.trim()) {
@@ -223,6 +224,7 @@ export default function VibeCoder({ project }: VibeCoderProps) {
 		},
 		[appendToConsole, startSandbox],
 	);
+
 
 	// Handle streaming sandbox state changes
 	useEffect(() => {
@@ -329,18 +331,6 @@ export default function VibeCoder({ project }: VibeCoderProps) {
 		isRefinement,
 	]);
 
-	const handleStatusUpdate = useCallback((newStatus: string) => {
-		setStatus(newStatus);
-	}, []);
-
-	const handleTranscriptReceived = useCallback(
-		(transcript: string, isFinal: boolean) => {
-			if (isFinal && transcript) {
-				// Transcript handling - could store in temporary state if needed
-			}
-		},
-		[],
-	);
 
 	const handleFollowUpSubmit = useCallback(async (message: string) => {
 		if (!generatedAppCode) {
@@ -477,84 +467,80 @@ export default function VibeCoder({ project }: VibeCoderProps) {
 		startSandbox,
 	]);
 
-	const handleFunctionCallArguments = useCallback(
-		(name: string, args: unknown) => {
-			if (name === "create_app") {
-				let description: string | undefined;
-				if (
-					typeof args === "object" &&
-					args !== null &&
-					"description" in args &&
-					typeof (args as { description: unknown }).description === "string"
-				) {
-					description = (args as { description: string }).description;
-				}
-				if (description) {
-					setStatus("Received app description. Generating your app...");
-					triggerAppGeneration(description);
-				}
-			} else if (name === "refine_app") {
-				let refinementMessage: string | undefined;
-				if (
-					typeof args === "object" &&
-					args !== null &&
-					"refinementMessage" in args &&
-					typeof (args as { refinementMessage: unknown }).refinementMessage === "string"
-				) {
-					refinementMessage = (args as { refinementMessage: string }).refinementMessage;
-				}
-				if (refinementMessage) {
-					setStatus("Received refinement instructions. Refining your app...");
-					handleFollowUpSubmit(refinementMessage);
-				}
-			} else {
-				// Unhandled function call from AI
-			}
-		},
-		[triggerAppGeneration, handleFollowUpSubmit],
-	);
+	// Make functions available to agent tools via window object
+	useEffect(() => {
+		window.triggerAppGeneration = triggerAppGeneration;
+		window.handleFollowUpSubmit = handleFollowUpSubmit;
+		
+		return () => {
+			delete window.triggerAppGeneration;
+			delete window.handleFollowUpSubmit;
+		};
+	}, [triggerAppGeneration, handleFollowUpSubmit]);
 
-	const handleVoiceConnectionStateChange = useCallback(
-		(state: RTCPeerConnectionState) => {
-			setStatus(
-				(prevStatus) =>
-					`Voice connection: ${state}. ${prevStatus.replace(/^Voice connection: [^.]+\. /, "")}`,
-			);
-		},
-		[],
-	);
+	// Audio ref for the realtime session
+	const audioRef = useRef<HTMLAudioElement>(null);
 
-	const handleVoiceError = useCallback(
-		(e: unknown) => {
-			const msg = e instanceof Error ? e.message : "Unknown voice error";
-			setStatus(
-				(prevStatus) =>
-					`Voice Error: ${msg}. ${prevStatus.replace(/^Voice Error: [^.]+\. /, "")}`,
-			);
-			appendToConsole("error", `Voice Error: ${msg}`, "failed");
-		},
-		[appendToConsole],
-	);
-
+	// Realtime session with agents
 	const {
-		isListening: voiceSessionIsListening,
-		isMuted: voiceSessionIsMuted,
-		startListening,
-		stopListening,
-		toggleMute,
-		audioRef: voiceSessionAudioRef,
-	} = useVoiceSession({
-		openAIApiKey: import.meta.env.VITE_OPENAI_API_KEY,
-		sessionParams: {
-			...vibeCoderSessionParams,
-			model: getModelId(selectedModel),
+		connect,
+		disconnect,
+		mute,
+	} = useRealtimeSession({
+		onConnectionChange: (status) => {
+			setStatus(`Session: ${status}`);
 		},
-		onStatusUpdate: handleStatusUpdate,
-		onTranscriptReceived: handleTranscriptReceived,
-		onFunctionCallArguments: handleFunctionCallArguments,
-		onConnectionStateChange: handleVoiceConnectionStateChange,
-		onError: handleVoiceError,
+		onAgentHandoff: (agentName) => {
+			setStatus(`Handed off to ${agentName} agent`);
+			appendToConsole("info", `Agent handoff: ${agentName}`);
+		},
 	});
+
+	// Session connection state
+	const [isConnected, setIsConnected] = useState(false);
+	const [isMuted, setIsMuted] = useState(false);
+
+	// Get ephemeral key function
+	const getEphemeralKey = useCallback(async () => {
+		const response = await fetch('/api/session');
+		const data = await response.json();
+		return data.client_secret.value;
+	}, []);
+
+	// Connect/disconnect functions
+	const startListening = useCallback(async () => {
+		if (!isConnected) {
+			try {
+				await connect({
+					getEphemeralKey,
+					initialAgents: vibeCoderScenario,
+					audioElement: audioRef.current || undefined,
+					extraContext: {
+						currentAppCode: generatedAppCode || undefined,
+					},
+				});
+				setIsConnected(true);
+				setStatus("Connected! Start speaking to create an app.");
+			} catch (error) {
+				console.error('Failed to connect:', error);
+				setStatus('Failed to connect to voice session');
+				appendToConsole("error", 'Failed to connect to voice session', "failed");
+			}
+		}
+	}, [isConnected, connect, getEphemeralKey, generatedAppCode, appendToConsole]);
+
+	const stopListening = useCallback(() => {
+		if (isConnected) {
+			disconnect();
+			setIsConnected(false);
+			setStatus("Disconnected from voice session.");
+		}
+	}, [isConnected, disconnect]);
+
+	const toggleMute = useCallback(() => {
+		mute(!isMuted);
+		setIsMuted(!isMuted);
+	}, [isMuted, mute]);
 
 	// No iframe data URL handling; sandbox preview URL is used instead
 
@@ -570,13 +556,13 @@ export default function VibeCoder({ project }: VibeCoderProps) {
 						currentAppDescription={currentAppDescription}
 						followUpText={followUpText}
 						setFollowUpText={setFollowUpText}
-						isListening={voiceSessionIsListening}
+						isListening={isConnected}
 						status={status}
 						startVoiceSession={startListening}
 						stopVoiceSession={stopListening}
 						isGeneratingCode={isGeneratingCode}
 						generatedAppCode={generatedAppCode}
-						isMuted={voiceSessionIsMuted}
+						isMuted={isMuted}
 						onToggleMute={toggleMute}
 						onSendMessage={handleFollowUpSubmit}
 						selectedModel={selectedModel}
@@ -609,7 +595,7 @@ export default function VibeCoder({ project }: VibeCoderProps) {
 			/>
 
 			<audio
-				ref={voiceSessionAudioRef}
+				ref={audioRef}
 				style={{ display: "none" }}
 				aria-hidden="true"
 				tabIndex={-1}

@@ -25,6 +25,7 @@ import { Route as AppProjectsProjectIdRouteImport } from './routes/_app.projects
 import { Route as AppDocumentationIntroductionRouteImport } from './routes/_app.documentation.introduction'
 import { Route as AppDocumentationGetStartedRouteImport } from './routes/_app.documentation.get-started'
 import { Route as AppDocumentationChangelogRouteImport } from './routes/_app.documentation.changelog'
+import { ServerRoute as ApiSessionServerRouteImport } from './routes/api/session'
 import { ServerRoute as ApiSandboxStreamServerRouteImport } from './routes/api/sandbox/stream'
 
 const rootServerRouteImport = createServerRootRoute()
@@ -101,6 +102,11 @@ const AppDocumentationChangelogRoute =
     path: '/changelog',
     getParentRoute: () => AppDocumentationRoute,
   } as any)
+const ApiSessionServerRoute = ApiSessionServerRouteImport.update({
+  id: '/api/session',
+  path: '/api/session',
+  getParentRoute: () => rootServerRouteImport,
+} as any)
 const ApiSandboxStreamServerRoute = ApiSandboxStreamServerRouteImport.update({
   id: '/api/sandbox/stream',
   path: '/api/sandbox/stream',
@@ -207,24 +213,28 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
 }
 export interface FileServerRoutesByFullPath {
+  '/api/session': typeof ApiSessionServerRoute
   '/api/sandbox/stream': typeof ApiSandboxStreamServerRoute
 }
 export interface FileServerRoutesByTo {
+  '/api/session': typeof ApiSessionServerRoute
   '/api/sandbox/stream': typeof ApiSandboxStreamServerRoute
 }
 export interface FileServerRoutesById {
   __root__: typeof rootServerRouteImport
+  '/api/session': typeof ApiSessionServerRoute
   '/api/sandbox/stream': typeof ApiSandboxStreamServerRoute
 }
 export interface FileServerRouteTypes {
   fileServerRoutesByFullPath: FileServerRoutesByFullPath
-  fullPaths: '/api/sandbox/stream'
+  fullPaths: '/api/session' | '/api/sandbox/stream'
   fileServerRoutesByTo: FileServerRoutesByTo
-  to: '/api/sandbox/stream'
-  id: '__root__' | '/api/sandbox/stream'
+  to: '/api/session' | '/api/sandbox/stream'
+  id: '__root__' | '/api/session' | '/api/sandbox/stream'
   fileServerRoutesById: FileServerRoutesById
 }
 export interface RootServerRouteChildren {
+  ApiSessionServerRoute: typeof ApiSessionServerRoute
   ApiSandboxStreamServerRoute: typeof ApiSandboxStreamServerRoute
 }
 
@@ -332,6 +342,13 @@ declare module '@tanstack/react-router' {
 }
 declare module '@tanstack/react-start/server' {
   interface ServerFileRoutesByPath {
+    '/api/session': {
+      id: '/api/session'
+      path: '/api/session'
+      fullPath: '/api/session'
+      preLoaderRoute: typeof ApiSessionServerRouteImport
+      parentRoute: typeof rootServerRouteImport
+    }
     '/api/sandbox/stream': {
       id: '/api/sandbox/stream'
       path: '/api/sandbox/stream'
@@ -412,6 +429,7 @@ export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
 const rootServerRouteChildren: RootServerRouteChildren = {
+  ApiSessionServerRoute: ApiSessionServerRoute,
   ApiSandboxStreamServerRoute: ApiSandboxStreamServerRoute,
 }
 export const serverRouteTree = rootServerRouteImport

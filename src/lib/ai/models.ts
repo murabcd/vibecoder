@@ -1,11 +1,13 @@
 export const modelRealtime = "RealtimeModel";
 export const modelRealtimeMini = "RealtimeMiniModel";
+export const modelTranscription = "TranscriptionModel";
 export const modelChat = "ChatModel";
 export const modelChatMini = "ChatMiniModel";
 
 const modelMappings: Record<string, string> = {
-	[modelRealtime]: "gpt-4o-mini-realtime-preview",
-	[modelRealtimeMini]: "gpt-4o-realtime-preview",
+	[modelRealtime]: "gpt-4o-realtime-preview",
+	[modelRealtimeMini]: "gpt-4o-mini-realtime-preview",
+	[modelTranscription]: "gpt-4o-mini-transcribe",
 	[modelChat]: "gpt-4.1",
 	[modelChatMini]: "gpt-4.1-mini",
 };
