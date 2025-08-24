@@ -69,11 +69,6 @@ Guidelines:
 9. For Vite projects, the dev script should prefer port 5173 and include \`--host\`. For Next.js, prefer port 3000 and bind to 0.0.0.0.
 `;
 
-export const appNameGenerationPrompt = `You will generate a short title based on the first message a user begins a conversation with.
-- Ensure it is not more than 80 characters long
-- The title should be a summary of the user's message
-- Do not use quotes or colons`;
-
 export const appRefinemenPrompt = (
 	existingCode: string,
 	userInstruction: string,
@@ -89,11 +84,16 @@ Existing primary file for context (index.html):
 User instruction: ${userInstruction}
 
 Constraints for Next.js projects:
-- Preserve the App Router structure (app/...). Do not add \"use client\" to \`app/layout.tsx\`.
+- Preserve the App Router structure (app/...). Do not add "use client" to \`app/layout.tsx\`.
 - Do not export \`metadata\` from any client component. Keep it only in \`app/layout.(ts|tsx)\`.
-- If the dev script is missing or incorrect, update \`package.json\` to include: \"dev\": \"next dev -p 3000 -H 0.0.0.0\".
+- If the dev script is missing or incorrect, update \`package.json\` to include: "dev": "next dev -p 3000 -H 0.0.0.0".
 \n+General refinement rules:
 - Maintain compatibility with previously generated files; modify only what is necessary. Keep paths relative and avoid introducing 8080 as a dev port.
-- Prefer pnpm in any updated scripts or instructions. Do not rely on shell state (no \`cd\`, no chained \`&&\").
+- Prefer pnpm in any updated scripts or instructions. Do not rely on shell state (no \`cd\`, no chained \`&&\`).
 - If the stack requires it, add or adjust config files (e.g., \`tsconfig.json\`, \`vite.config.ts\`, Tailwind/PostCSS) so the project remains runnable.
 `;
+
+export const appNameGenerationPrompt = `You will generate a short title based on the first message a user begins a conversation with.
+- Ensure it is not more than 80 characters long
+- The title should be a summary of the user's message
+- Do not use quotes or colons`;

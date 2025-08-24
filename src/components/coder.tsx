@@ -6,12 +6,12 @@ import type { Id } from "convex/_generated/dataModel";
 import { useVoiceSession } from "@/hooks/use-voice-session";
 import { useSandboxStream } from "@/hooks/use-sandbox-stream";
 
-import { appRefinemenPrompt } from "@/lib/ai/prompts";
 import {
 	vibeCoderSessionParams,
 	generateAppOnServer,
 	generateAppNameOnServer,
-} from "@/lib/ai/ai";
+	generateAppRefinementOnServer,
+} from "@/lib/ai/session";
 import { modelRealtimeMini, getModelId } from "@/lib/ai/models";
 
 import CodePreview from "@/components/code-preview";
@@ -431,11 +431,12 @@ export default function VibeCoder({ project }: VibeCoderProps) {
 		setIsGeneratingCode(true);
 		appendToConsole("info", "Refinement process started.");
 
-		const refinementDescription = appRefinemenPrompt(generatedAppCode, message);
-
 		try {
-			const filesObject = await generateAppOnServer({
-				data: refinementDescription,
+			const filesObject = await generateAppRefinementOnServer({
+				data: {
+					currentCode: generatedAppCode,
+					refinementMessage: message,
+				},
 			});
 			appendToConsole("info", "App refined successfully. Updating sandbox...");
 
