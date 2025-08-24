@@ -342,72 +342,7 @@ export default function VibeCoder({ project }: VibeCoderProps) {
 		[],
 	);
 
-	const handleFunctionCallArguments = useCallback(
-		(name: string, args: unknown) => {
-			if (name === "create_app") {
-				let description: string | undefined;
-				if (
-					typeof args === "object" &&
-					args !== null &&
-					"description" in args &&
-					typeof (args as { description: unknown }).description === "string"
-				) {
-					description = (args as { description: string }).description;
-				}
-				if (description) {
-					setStatus("Received app description. Generating your app...");
-					triggerAppGeneration(description);
-				}
-			} else {
-				// Unhandled function call from AI
-			}
-		},
-		[triggerAppGeneration],
-	);
-
-	const handleVoiceConnectionStateChange = useCallback(
-		(state: RTCPeerConnectionState) => {
-			setStatus(
-				(prevStatus) =>
-					`Voice connection: ${state}. ${prevStatus.replace(/^Voice connection: [^.]+\. /, "")}`,
-			);
-		},
-		[],
-	);
-
-	const handleVoiceError = useCallback(
-		(e: unknown) => {
-			const msg = e instanceof Error ? e.message : "Unknown voice error";
-			setStatus(
-				(prevStatus) =>
-					`Voice Error: ${msg}. ${prevStatus.replace(/^Voice Error: [^.]+\. /, "")}`,
-			);
-			appendToConsole("error", `Voice Error: ${msg}`, "failed");
-		},
-		[appendToConsole],
-	);
-
-	const {
-		isListening: voiceSessionIsListening,
-		isMuted: voiceSessionIsMuted,
-		startListening,
-		stopListening,
-		toggleMute,
-		audioRef: voiceSessionAudioRef,
-	} = useVoiceSession({
-		openAIApiKey: import.meta.env.VITE_OPENAI_API_KEY,
-		sessionParams: {
-			...vibeCoderSessionParams,
-			model: getModelId(selectedModel),
-		},
-		onStatusUpdate: handleStatusUpdate,
-		onTranscriptReceived: handleTranscriptReceived,
-		onFunctionCallArguments: handleFunctionCallArguments,
-		onConnectionStateChange: handleVoiceConnectionStateChange,
-		onError: handleVoiceError,
-	});
-
-	const handleFollowUpSubmit = async (message: string) => {
+	const handleFollowUpSubmit = useCallback(async (message: string) => {
 		if (!generatedAppCode) {
 			setStatus("Please generate an app first before refining.");
 			appendToConsole(
@@ -533,7 +468,93 @@ export default function VibeCoder({ project }: VibeCoderProps) {
 			setIsGeneratingCode(false);
 			setIsRefinement(false);
 		}
-	};
+	}, [
+		generatedAppCode,
+		appendToConsole,
+		sandboxId,
+		updateAppHistory,
+		currentAppHistoryId,
+		startSandbox,
+	]);
+
+	const handleFunctionCallArguments = useCallback(
+		(name: string, args: unknown) => {
+			if (name === "create_app") {
+				let description: string | undefined;
+				if (
+					typeof args === "object" &&
+					args !== null &&
+					"description" in args &&
+					typeof (args as { description: unknown }).description === "string"
+				) {
+					description = (args as { description: string }).description;
+				}
+				if (description) {
+					setStatus("Received app description. Generating your app...");
+					triggerAppGeneration(description);
+				}
+			} else if (name === "refine_app") {
+				let refinementMessage: string | undefined;
+				if (
+					typeof args === "object" &&
+					args !== null &&
+					"refinementMessage" in args &&
+					typeof (args as { refinementMessage: unknown }).refinementMessage === "string"
+				) {
+					refinementMessage = (args as { refinementMessage: string }).refinementMessage;
+				}
+				if (refinementMessage) {
+					setStatus("Received refinement instructions. Refining your app...");
+					handleFollowUpSubmit(refinementMessage);
+				}
+			} else {
+				// Unhandled function call from AI
+			}
+		},
+		[triggerAppGeneration, handleFollowUpSubmit],
+	);
+
+	const handleVoiceConnectionStateChange = useCallback(
+		(state: RTCPeerConnectionState) => {
+			setStatus(
+				(prevStatus) =>
+					`Voice connection: ${state}. ${prevStatus.replace(/^Voice connection: [^.]+\. /, "")}`,
+			);
+		},
+		[],
+	);
+
+	const handleVoiceError = useCallback(
+		(e: unknown) => {
+			const msg = e instanceof Error ? e.message : "Unknown voice error";
+			setStatus(
+				(prevStatus) =>
+					`Voice Error: ${msg}. ${prevStatus.replace(/^Voice Error: [^.]+\. /, "")}`,
+			);
+			appendToConsole("error", `Voice Error: ${msg}`, "failed");
+		},
+		[appendToConsole],
+	);
+
+	const {
+		isListening: voiceSessionIsListening,
+		isMuted: voiceSessionIsMuted,
+		startListening,
+		stopListening,
+		toggleMute,
+		audioRef: voiceSessionAudioRef,
+	} = useVoiceSession({
+		openAIApiKey: import.meta.env.VITE_OPENAI_API_KEY,
+		sessionParams: {
+			...vibeCoderSessionParams,
+			model: getModelId(selectedModel),
+		},
+		onStatusUpdate: handleStatusUpdate,
+		onTranscriptReceived: handleTranscriptReceived,
+		onFunctionCallArguments: handleFunctionCallArguments,
+		onConnectionStateChange: handleVoiceConnectionStateChange,
+		onError: handleVoiceError,
+	});
 
 	// No iframe data URL handling; sandbox preview URL is used instead
 

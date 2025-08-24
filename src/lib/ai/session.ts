@@ -52,6 +52,22 @@ export const vibeCoderSessionParams = {
 				required: ["description"],
 			},
 		},
+		{
+			type: "function",
+			name: "refine_app",
+			description:
+				"Use this function to refine or modify an existing app based on user instructions.",
+			parameters: {
+				type: "object",
+				properties: {
+					refinementMessage: {
+						type: "string",
+						description: "The instructions for how to refine or modify the app.",
+					},
+				},
+				required: ["refinementMessage"],
+			},
+		},
 	],
 };
 
