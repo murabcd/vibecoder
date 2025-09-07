@@ -164,6 +164,8 @@ export const updateSandboxFilesOnServer = createServerFn({ method: "POST" })
 			.object({
 				sandboxId: z.string(),
 				files: SandboxFilesPayloadSchema.shape.files,
+				timeout: z.number().optional().default(300000), // 5 minutes default
+				ports: z.array(z.number()).optional(),
 			})
 			.parse(input),
 	)
@@ -174,18 +176,198 @@ export const updateSandboxFilesOnServer = createServerFn({ method: "POST" })
 			data: {
 				sandboxId: string;
 				files: z.infer<typeof SandboxFilesPayloadSchema>["files"];
+				timeout?: number;
+				ports?: number[];
 			};
 		}) => {
 			const { Sandbox } = await import("@vercel/sandbox");
 			validateFilesPayload(data.files);
-			const sandbox = await Sandbox.get({ sandboxId: data.sandboxId });
-			await sandbox.writeFiles(
-				data.files.map((f) => ({
-					path: f.path,
-					content: Buffer.from(f.content, "utf8"),
-				})),
-			);
-			return { ok: true };
+
+			try {
+				const sandbox = await Sandbox.get({ sandboxId: data.sandboxId });
+				await sandbox.writeFiles(
+					data.files.map((f) => ({
+						path: f.path,
+						content: Buffer.from(f.content, "utf8"),
+					})),
+				);
+				return { ok: true, sandboxId: data.sandboxId };
+			} catch (error) {
+				// Check if sandbox has stopped (410 Gone)
+				const isSandboxStopped =
+					error instanceof Error &&
+					"status" in error &&
+					(error as { status?: number }).status === 410;
+
+				if (isSandboxStopped) {
+					console.log("Sandbox stopped, creating new sandbox...");
+
+					// Detect preferred port from package.json
+					const pkgFile = data.files.find((f) =>
+						/(^|\/)package\.json$/i.test(f.path),
+					);
+					let pkgJson: {
+						packageManager?: string;
+						scripts?: Record<string, string>;
+						dependencies?: Record<string, string>;
+						devDependencies?: Record<string, string>;
+					} | null = null;
+					if (pkgFile) {
+						try {
+							pkgJson = JSON.parse(pkgFile.content.toString());
+						} catch {}
+					}
+
+					const desiredPort = pkgJson
+						? detectPreferredPortFromPackageJson(pkgJson)
+						: 3000;
+					const ports = ensureExposedPort(data.ports, desiredPort);
+
+					// Create new sandbox
+					const newSandbox = await Sandbox.create({
+						timeout: data.timeout,
+						ports,
+						runtime: "node22",
+					});
+
+					// Write files to new sandbox
+					await newSandbox.writeFiles(
+						data.files.map((f) => ({
+							path: f.path,
+							content: Buffer.from(f.content, "utf8"),
+						})),
+					);
+
+					// Start development server if needed
+					const hasIndexHtml = data.files.some((f) =>
+						/(^|\/)index\.html$/i.test(f.path),
+					);
+
+					if (pkgFile && pkgJson) {
+						const pkgMgr: "pnpm" | "npm" = /pnpm/.test(
+							pkgJson?.packageManager ?? "",
+						)
+							? "pnpm"
+							: "npm";
+
+						// Install dependencies
+						async function runInstall(): Promise<void> {
+							let exit = 1;
+							if (pkgMgr === "pnpm") {
+								const p = await newSandbox.runCommand({
+									cmd: "npx",
+									args: ["-y", "pnpm", "i", "--no-frozen-lockfile"],
+								});
+								exit = (await p.wait()).exitCode;
+							} else {
+								const p = await newSandbox.runCommand({
+									cmd: "npm",
+									args: [
+										"install",
+										"--silent",
+										"--no-audit",
+										"--no-fund",
+										"--legacy-peer-deps",
+									],
+								});
+								exit = (await p.wait()).exitCode;
+							}
+							if (exit !== 0) {
+								const p = await newSandbox.runCommand({
+									cmd: "npm",
+									args: [
+										"install",
+										"--silent",
+										"--no-audit",
+										"--no-fund",
+										"--legacy-peer-deps",
+									],
+								});
+								const r = await p.wait();
+								if (r.exitCode !== 0) {
+									throw new Error("npm install failed inside sandbox");
+								}
+							}
+						}
+						await runInstall();
+
+						// Start dev server
+						const hasDevScript = typeof pkgJson?.scripts?.dev === "string";
+						if (hasDevScript) {
+							const runCmd =
+								pkgMgr === "pnpm"
+									? ["npx", ["-y", "pnpm", "run", "dev"]]
+									: ["npm", ["run", "dev"]];
+							await newSandbox.runCommand({
+								cmd: runCmd[0] as string,
+								args: runCmd[1] as string[],
+								detached: true,
+							});
+						} else if (
+							/next/i.test(
+								JSON.stringify({
+									...pkgJson?.dependencies,
+									...pkgJson?.devDependencies,
+								}),
+							)
+						) {
+							await newSandbox.runCommand({
+								cmd: "npx",
+								args: [
+									"-y",
+									"next",
+									"dev",
+									"-p",
+									String(desiredPort),
+									"-H",
+									"0.0.0.0",
+								],
+								detached: true,
+							});
+						} else if (
+							/vite/i.test(
+								JSON.stringify({
+									...pkgJson?.dependencies,
+									...pkgJson?.devDependencies,
+								}),
+							)
+						) {
+							await newSandbox.runCommand({
+								cmd: "npx",
+								args: ["-y", "vite", "--port", String(desiredPort), "--host"],
+								detached: true,
+							});
+						}
+					} else if (hasIndexHtml) {
+						// Serve static HTML
+						await newSandbox.runCommand({
+							cmd: "npx",
+							args: [
+								"-y",
+								"http-server",
+								"-p",
+								String(desiredPort),
+								"-a",
+								"0.0.0.0",
+							],
+							detached: true,
+						});
+					}
+
+					const newUrl = newSandbox.domain(desiredPort);
+
+					return {
+						ok: true,
+						sandboxId: newSandbox.sandboxId,
+						url: newUrl,
+						port: desiredPort,
+						sandboxReplaced: true, // Flag to indicate sandbox was replaced
+					};
+				}
+
+				// Re-throw other errors
+				throw error;
+			}
 		},
 	);
 

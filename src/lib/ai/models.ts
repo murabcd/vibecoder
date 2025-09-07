@@ -1,15 +1,13 @@
 export const modelRealtime = "RealtimeModel";
 export const modelRealtimeMini = "RealtimeMiniModel";
 export const modelTranscription = "TranscriptionModel";
-export const modelChat = "ChatModel";
-export const modelChatMini = "ChatMiniModel";
+export const modelCodeGeneration = "CodeGenerationModel";
 
 const modelMappings: Record<string, string> = {
-	[modelRealtime]: "gpt-4o-realtime-preview",
+	[modelRealtime]: "gpt-realtime",
 	[modelRealtimeMini]: "gpt-4o-mini-realtime-preview",
 	[modelTranscription]: "gpt-4o-mini-transcribe",
-	[modelChat]: "gpt-4.1",
-	[modelChatMini]: "gpt-4.1-mini",
+	[modelCodeGeneration]: "gpt-4.1",
 };
 
 export function getModelId(id: string): string {
@@ -20,36 +18,23 @@ export function getModelId(id: string): string {
 	return modelId;
 }
 
-interface ModelInfo {
+export interface ModelInfo {
 	id: string;
 	name: string;
 	description: string;
-	strengths: string[];
 }
 
 export const modelInfoList: Array<ModelInfo> = [
 	{
 		id: modelRealtime,
-		name: "GPT-4o realtime preview",
+		name: "GPT realtime",
 		description:
 			"Higher quality conversational model with higher latency. Can handle complex reasoning and detailed responses with better instruction-following.",
-		strengths: [
-			"Complex reasoning",
-			"Detailed responses",
-			"Better instruction-following",
-			"Higher quality output",
-		],
 	},
 	{
 		id: modelRealtimeMini,
-		name: "GPT-4o mini realtime preview",
+		name: "GPT 4o mini realtime",
 		description:
 			"Optimized for low-latency conversational responses. Faster response times with good quality for real-time interactions.",
-		strengths: [
-			"Low latency",
-			"Fast responses",
-			"Real-time interactions",
-			"Good quality",
-		],
 	},
 ];

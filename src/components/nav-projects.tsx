@@ -112,6 +112,7 @@ export function NavProjects() {
 		try {
 			await removeApp({ id: appToDelete._id });
 			toast("Project deleted");
+			router.navigate({ to: "/" });
 		} catch (error) {
 			console.error("Failed to delete project:", error);
 			toast.error("Failed to delete project");

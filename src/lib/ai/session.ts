@@ -8,7 +8,11 @@ import {
 	refineAppPrompt,
 	appNameGenerationPrompt,
 } from "@/lib/ai/prompts";
-import { getModelId, modelChat, modelRealtimeMini } from "@/lib/ai/models";
+import {
+	getModelId,
+	modelCodeGeneration,
+	modelRealtimeMini,
+} from "@/lib/ai/models";
 import { SandboxFilesPayloadSchema } from "@/lib/sandbox";
 
 export function isNetworkError(error: Error): boolean {
@@ -96,7 +100,7 @@ export const generateAppOnServer = createServerFn({ method: "POST" })
 		for (let attempt = 1; attempt <= maxRetries; attempt++) {
 			try {
 				const stream = await client.responses.create({
-					model: getModelId(modelChat),
+					model: getModelId(modelCodeGeneration),
 					input: [
 						{ role: "system", content: createAppPrompt },
 						{ role: "user", content: appDescription },
@@ -273,7 +277,7 @@ export const generateAppRefinementOnServer = createServerFn({ method: "POST" })
 			for (let attempt = 1; attempt <= maxRetries; attempt++) {
 				try {
 					const stream = await client.responses.create({
-						model: getModelId(modelChat),
+						model: getModelId(modelCodeGeneration),
 						input: [
 							{ role: "system", content: createAppPrompt },
 							{ role: "user", content: refinementDescription },

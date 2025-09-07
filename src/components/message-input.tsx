@@ -16,11 +16,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	HoverCard,
-	HoverCardContent,
-	HoverCardTrigger,
-} from "@/components/ui/hover-card";
 import StatusBar from "@/components/status-bar";
 import { modelInfoList } from "@/lib/ai/models";
 
@@ -126,34 +121,7 @@ function MessageInput({
 						<SelectContent>
 							{modelInfoList.map((model) => (
 								<SelectItem key={model.id} value={model.id}>
-									<HoverCard>
-										<HoverCardTrigger asChild>
-											<span>{model.name}</span>
-										</HoverCardTrigger>
-										<HoverCardContent
-											className="w-80"
-											side="right"
-											align="start"
-										>
-											<div className="space-y-2">
-												<h4 className="font-semibold text-sm">{model.name}</h4>
-												<p className="text-sm text-muted-foreground">
-													{model.description}
-												</p>
-												<div>
-													<p className="text-xs font-medium mb-1">Strengths</p>
-													<ul className="text-xs text-muted-foreground space-y-1">
-														{model.strengths.map((strength) => (
-															<li key={strength} className="flex items-center">
-																<span className="w-1.5 h-1.5 bg-primary rounded-full mr-2"></span>
-																{strength}
-															</li>
-														))}
-													</ul>
-												</div>
-											</div>
-										</HoverCardContent>
-									</HoverCard>
+									{model.name}
 								</SelectItem>
 							))}
 						</SelectContent>
@@ -185,13 +153,13 @@ function MessageInput({
 								variant="default"
 								onClick={onToggleListening}
 								className="rounded-full cursor-pointer"
-								aria-label={isListening ? "Stop listening" : "Start listening"}
+								aria-label={isListening ? "Stop vibing" : "Start vibing"}
 							>
 								{isListening ? <Square size={20} /> : <AudioLines size={20} />}
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent>
-							<p>{isListening ? "Stop listening" : "Start listening"}</p>
+							<p>{isListening ? "Stop vibing" : "Start vibing"}</p>
 						</TooltipContent>
 					</Tooltip>
 				</div>

@@ -227,6 +227,7 @@ export default function CodePreview({
 								</div>
 							) : (
 								<iframe
+									key={previewUrl} // Force re-mount when URL changes
 									className="h-full w-full bg-card"
 									ref={iframeRef}
 									sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-presentation"

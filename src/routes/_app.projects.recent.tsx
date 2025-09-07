@@ -41,6 +41,10 @@ function RouteComponent() {
 		});
 	};
 
+	const handleProjectDelete = () => {
+		navigate({ to: "/" });
+	};
+
 	return (
 		<div className="flex-1 space-y-4 p-4 pt-6">
 			{recentProjects.length === 0 ? (
@@ -60,6 +64,7 @@ function RouteComponent() {
 							key={app._id}
 							project={app}
 							onProjectClick={handleProjectClick}
+							onDelete={handleProjectDelete}
 						/>
 					))}
 				</div>

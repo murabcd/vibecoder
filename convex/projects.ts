@@ -28,17 +28,24 @@ export const create = mutation({
 		previewUrl: v.optional(v.string()),
 		sandboxId: v.optional(v.string()),
 	},
-	handler: async (ctx, args) => {
-		return await ctx.db.insert("projects", {
-			title: args.title,
-			description: args.description,
-			code: args.code,
-			files: args.files,
-			previewUrl: args.previewUrl,
-			sandboxId: args.sandboxId,
-			createdAt: Date.now(),
-		});
-	},
+    handler: async (ctx, args) => {
+        // Create a new project without creating a version yet.
+        // The first real version (v1) will be created on the first update
+        // when actual code/files are saved.
+        const now = Date.now();
+        const projectId = await ctx.db.insert("projects", {
+            title: args.title,
+            description: args.description,
+            code: args.code,
+            files: args.files,
+            previewUrl: args.previewUrl,
+            sandboxId: args.sandboxId,
+            // currentVersion intentionally omitted until first real update
+            createdAt: now,
+        });
+
+        return projectId;
+    },
 });
 
 export const update = mutation({
@@ -59,12 +66,184 @@ export const update = mutation({
 		sandboxId: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
-		const { id, ...updates } = args;
+		const { id, title, description, code, files, previewUrl, sandboxId } = args;
 
-		const cleanUpdates = Object.fromEntries(
-			Object.entries(updates).filter(([, value]) => value !== undefined),
-		);
-		return await ctx.db.patch(id, cleanUpdates);
+		// Build updates explicitly to preserve types
+
+		// Fetch current project to compare changes and determine version
+		const existing = await ctx.db.get(id);
+		if (!existing) {
+			throw new Error("Project not found");
+		}
+
+		// Determine if code/files have changed
+		const nextCode: string =
+			code !== undefined ? code : (existing.code as string);
+		const nextFiles: Array<{ path: string; content: string }> =
+			files !== undefined
+				? (files as Array<{ path: string; content: string }>)
+				: (existing.files as Array<{ path: string; content: string }>);
+
+		const codeChanged = code !== undefined && existing.code !== nextCode;
+		const filesChanged = (() => {
+			if (files === undefined) return false;
+			try {
+				const a = JSON.stringify(existing.files);
+				const b = JSON.stringify(nextFiles);
+				return a !== b;
+			} catch {
+				// Fallback: assume changed if cannot compare
+				return true;
+			}
+		})();
+
+		const shouldCreateVersion = codeChanged || filesChanged;
+
+        // Apply updates to project
+        if (shouldCreateVersion) {
+            const now = Date.now();
+
+            // First real update creates v1; thereafter increment normally
+            const nextVersion = (existing.currentVersion ?? 0) + 1;
+
+			const patchUpdates: Partial<{
+				title: string;
+				description: string;
+				code: string;
+				files: Array<{ path: string; content: string }>;
+				previewUrl?: string;
+				sandboxId?: string;
+				currentVersion: number;
+			}> = {};
+
+			if (title !== undefined) patchUpdates.title = title;
+			if (description !== undefined) patchUpdates.description = description;
+			if (code !== undefined) patchUpdates.code = code;
+			if (files !== undefined)
+				patchUpdates.files = files as Array<{ path: string; content: string }>;
+			if (previewUrl !== undefined) patchUpdates.previewUrl = previewUrl;
+			if (sandboxId !== undefined) patchUpdates.sandboxId = sandboxId;
+			patchUpdates.currentVersion = nextVersion;
+
+			await ctx.db.patch(id, patchUpdates);
+
+            await ctx.db.insert("versions", {
+                projectId: id,
+                version: nextVersion,
+                code: nextCode,
+                files: nextFiles,
+                previewUrl:
+					previewUrl !== undefined
+						? (previewUrl as string | undefined)
+						: (existing.previewUrl as string | undefined),
+				sandboxId:
+					sandboxId !== undefined
+						? (sandboxId as string | undefined)
+						: (existing.sandboxId as string | undefined),
+				note: "Update",
+				createdAt: now,
+			});
+
+			return id;
+		} else {
+			// No code/files change — just patch metadata
+			const patchUpdates: Partial<{
+				title: string;
+				description: string;
+				code: string;
+				files: Array<{ path: string; content: string }>;
+				previewUrl?: string;
+				sandboxId?: string;
+			}> = {};
+			if (title !== undefined) patchUpdates.title = title;
+			if (description !== undefined) patchUpdates.description = description;
+			if (code !== undefined) patchUpdates.code = code;
+			if (files !== undefined)
+				patchUpdates.files = files as Array<{ path: string; content: string }>;
+			if (previewUrl !== undefined) patchUpdates.previewUrl = previewUrl;
+			if (sandboxId !== undefined) patchUpdates.sandboxId = sandboxId;
+			await ctx.db.patch(id, patchUpdates);
+			return id;
+		}
+	},
+});
+
+// List all versions for a project (latest first)
+export const listVersions = query({
+	args: { projectId: v.optional(v.id("projects")) },
+	handler: async (ctx, args) => {
+		if (!args.projectId) {
+			return [];
+		}
+		return await ctx.db
+			.query("versions")
+			.withIndex("by_project_version", (q) =>
+				q.eq("projectId", args.projectId!),
+			)
+			.order("desc")
+			.collect();
+	},
+});
+
+// Fetch a specific version by number
+export const getVersion = query({
+	args: { projectId: v.id("projects"), version: v.number() },
+	handler: async (ctx, args) => {
+		const docs = await ctx.db
+			.query("versions")
+			.withIndex("by_project_version", (q) => q.eq("projectId", args.projectId))
+			.filter((q) => q.eq(q.field("version"), args.version))
+			.collect();
+		return docs[0] ?? null;
+	},
+});
+
+// Revert a project to a specific version and create a new snapshot
+export const revertToVersion = mutation({
+	args: {
+		id: v.id("projects"),
+		version: v.number(),
+		note: v.optional(v.string()),
+	},
+	handler: async (ctx, args) => {
+		const { id, version, note } = args;
+
+		const existing = await ctx.db.get(id);
+		if (!existing) throw new Error("Project not found");
+
+		const targetDocs = await ctx.db
+			.query("versions")
+			.withIndex("by_project_version", (q) => q.eq("projectId", id))
+			.filter((q) => q.eq(q.field("version"), version))
+			.collect();
+		const target = targetDocs[0];
+		if (!target) throw new Error(`Version ${version} not found`);
+
+        const now = Date.now();
+        const nextVersion = (existing.currentVersion ?? 0) + 1;
+
+		// Apply revert content to project
+		await ctx.db.patch(id, {
+			code: target.code,
+			files: target.files as Array<{ path: string; content: string }>,
+			previewUrl: target.previewUrl,
+			sandboxId: target.sandboxId,
+			currentVersion: nextVersion,
+		});
+
+		// Record a new version noting the revert
+		await ctx.db.insert("versions", {
+			projectId: id,
+			version: nextVersion,
+			code: target.code,
+			files: target.files as Array<{ path: string; content: string }>,
+			previewUrl: target.previewUrl,
+			sandboxId: target.sandboxId,
+			note: note ?? `Revert to v${version}`,
+			createdAt: now,
+		});
+
+		return id;
 	},
 });
 

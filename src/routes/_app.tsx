@@ -81,7 +81,7 @@ function AppBreadcrumbs() {
 
 	const getDisplayName = (segment: string, isProjectId = false) => {
 		if (isProjectId && project) {
-			return project.title || "Untitled Project";
+			return project.title || "Untitled";
 		}
 		return (
 			DISPLAY_NAMES[segment] ||
@@ -105,7 +105,6 @@ function AppBreadcrumbs() {
 	);
 
 	if (isMainSection) {
-		// Special handling for direct project routes
 		if (isDirectProjectRoute && project) {
 			const fromPath =
 				fromParam === "recent" ? "/projects/recent" : "/projects/all";
@@ -178,7 +177,10 @@ function AppBreadcrumbs() {
 			<Breadcrumb>
 				<BreadcrumbList>
 					{breadcrumbItems.map((item, index) => (
-						<div key={item.path} className="flex items-center gap-1.5">
+						<div
+							key={`breadcrumb-${item.path}-${index}`}
+							className="flex items-center gap-1.5"
+						>
 							{index > 0 && <BreadcrumbSeparator />}
 							<BreadcrumbItem>
 								{item.isLast ? (
@@ -210,8 +212,11 @@ function AppBreadcrumbs() {
 				<BreadcrumbItem>
 					<BreadcrumbLink href="/">Home</BreadcrumbLink>
 				</BreadcrumbItem>
-				{breadcrumbItems.map((item) => (
-					<div key={item.path} className="flex items-center gap-1.5">
+				{breadcrumbItems.map((item, index) => (
+					<div
+						key={`default-breadcrumb-${item.path}-${index}`}
+						className="flex items-center gap-1.5"
+					>
 						<BreadcrumbSeparator />
 						<BreadcrumbItem>
 							{item.isLast ? (

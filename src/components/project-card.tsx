@@ -51,9 +51,14 @@ interface ProjectCardProps {
 		visibility?: "private" | "public";
 	};
 	onProjectClick: (project: ProjectCardProps["project"]) => void;
+	onDelete?: () => void;
 }
 
-export function ProjectCard({ project, onProjectClick }: ProjectCardProps) {
+export function ProjectCard({
+	project,
+	onProjectClick,
+	onDelete,
+}: ProjectCardProps) {
 	const removeApp = useMutation(api.projects.remove);
 	const toggleStarred = useMutation(api.projects.toggleStarred);
 
@@ -69,6 +74,7 @@ export function ProjectCard({ project, onProjectClick }: ProjectCardProps) {
 		try {
 			await removeApp({ id: project._id });
 			toast("Project deleted");
+			onDelete?.();
 		} catch (error) {
 			console.error("Failed to delete project:", error);
 			toast.error("Failed to delete project");

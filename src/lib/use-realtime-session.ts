@@ -8,7 +8,7 @@ import {
 	getModelId,
 	modelRealtimeMini,
 	modelTranscription,
-} from "../lib/ai/models";
+} from "@/lib/ai/models";
 import type { SessionStatus } from "@/types";
 
 type ExtendedSessionStatus = SessionStatus | "RECONNECTING";

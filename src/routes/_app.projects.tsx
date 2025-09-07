@@ -7,7 +7,6 @@ export const Route = createFileRoute("/_app/projects")({
 function RouteComponent() {
 	return (
 		<div className="flex flex-col h-full">
-			{/* Projects Content */}
 			<div className="flex-1 overflow-auto">
 				<Outlet />
 			</div>
