@@ -1,10 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import z from "zod/v3";
 
-// ------------------------------
-// Streaming Support
-// ------------------------------
-
 export type SandboxEvent =
 	| { type: "status"; message: string; progress?: number }
 	| { type: "error"; error: string }
@@ -14,14 +10,8 @@ export type SandboxEvent =
 			progress?: number;
 	  };
 
-// Simple event emitter for streaming updates - currently unused but kept for future implementation
-
-// ------------------------------
-// Shared validation & utilities
-// ------------------------------
-
-const MAX_FILE_SIZE_BYTES = 512 * 1024; // 512 KB per file
-const MAX_TOTAL_SIZE_BYTES = 3 * 1024 * 1024; // 3 MB total
+const MAX_FILE_SIZE_BYTES = 512 * 1024;
+const MAX_TOTAL_SIZE_BYTES = 3 * 1024 * 1024;
 
 export function isSafeRelativePath(path: string): boolean {
 	if (typeof path !== "string" || path.trim() === "") return false;

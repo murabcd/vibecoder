@@ -1,4 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
@@ -39,7 +40,27 @@ function RouteComponent() {
 	// If autostart is present, strip it from the URL after initial render to avoid
 	// re-triggering on refresh/navigation. Coder component will still receive the
 	// initial autostart prop during first mount.
-	if (search.autostart) {
+	// Read optional generate param directly from URL or sessionStorage ONCE
+	const { generateFromUrl, generateParam } = useMemo(() => {
+		try {
+			const usp = new URLSearchParams(window.location.search);
+			const g = usp.get("generate") ?? undefined;
+			const s = sessionStorage.getItem("vc:initialDescription") ?? undefined;
+			if (s) sessionStorage.removeItem("vc:initialDescription");
+			return {
+				generateFromUrl: g,
+				generateParam: (g ?? s) as string | undefined,
+			};
+		} catch {
+			return {
+				generateFromUrl: undefined as string | undefined,
+				generateParam: undefined as string | undefined,
+			};
+		}
+	}, []);
+
+	// Clean URL only if we used an URL param (sessionStorage needs no cleanup)
+	if (search.autostart || generateFromUrl) {
 		// Fire-and-forget; the component render proceeds while we clean the URL.
 		void router.navigate({
 			to: `/projects/${projectId}`,
@@ -52,8 +73,10 @@ function RouteComponent() {
 		<VibeCoder
 			key={projectId}
 			project={project}
+			projectId={projectId}
 			autostart={!!search.autostart}
 			defaultVersion={search.version}
+			initialDescription={generateParam}
 		/>
 	);
 }

@@ -38,17 +38,21 @@ interface AppHistoryItem {
 
 interface VibeCoderProps {
 	project?: AppHistoryItem;
+	projectId?: string; // present on project route; undefined on root
 	autostart?: boolean;
 	defaultVersion?: number | null;
+	initialDescription?: string;
 }
 
 export default function VibeCoder({
 	project,
+	projectId,
 	autostart,
 	defaultVersion,
+	initialDescription,
 }: VibeCoderProps) {
 	const [status, setStatus] = useState(
-		"Click the voice button to start coding.",
+		"Click the voice button to start coding or write a description.",
 	);
 	const [followUpText, setFollowUpText] = useState("");
 	const [isGeneratingCode, setIsGeneratingCode] = useState(false);
@@ -57,6 +61,7 @@ export default function VibeCoder({
 	const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
 	const [isRefinement, setIsRefinement] = useState(false);
 	const [isPreviewSwitch, setIsPreviewSwitch] = useState(false);
+	const [isSwitchingVersion, setIsSwitchingVersion] = useState(false);
 	const [selectedModel, setSelectedModel] = useState(modelRealtimeMini);
 	const [generationDescription, setGenerationDescription] =
 		useState<string>("");
@@ -92,13 +97,18 @@ export default function VibeCoder({
 		? (selectedVersionData.previewUrl ?? null)
 		: (generatedContent?.previewUrl ?? project?.previewUrl ?? null);
 	const sandboxId = project?.sandboxId || generatedContent?.sandboxId || null;
-	let currentSandboxId = sandboxId;
+	const currentSandboxId = sandboxId;
 	const currentAppHistoryId = project?._id as Id<"projects"> | null;
 
 	// Track processed sandbox results to prevent duplicates
 	const processedSandboxRef = useRef<Set<string>>(new Set());
 	// Track last processed status message to prevent duplicate console logs
 	const lastStatusMessageRef = useRef<string>("");
+
+	// Track last applied latest files snapshot (for auto-sync in Latest view)
+	const latestFilesHashRef = useRef<string | null>(null);
+	// Track if we've completed initial project load to prevent unnecessary sync
+	const initialProjectLoadRef = useRef<boolean>(false);
 
 	// Utility function to add cache-busting parameter to URL
 	const addCacheBusting = useCallback((url: string): string => {
@@ -188,8 +198,13 @@ export default function VibeCoder({
 			}
 			setStatus(`Loaded "${project.title}" from history.`);
 			appendToConsole("info", `Loaded "${project.title}" from history.`);
+
+			// Reset initial load flag when project changes
+			initialProjectLoadRef.current = false;
 		}
 	}, [project, appendToConsole]);
+
+	// Handle selected version files
 
 	useEffect(() => {
 		if (selectedVersionData?.files && selectedVersionData.files.length > 0) {
@@ -605,6 +620,21 @@ export default function VibeCoder({
 		],
 	);
 
+	// Unified text submit: generate when no app exists; otherwise refine
+	const handleTextSubmit = useCallback(
+		async (message: string) => {
+			if (!message.trim()) return;
+			if (!generatedAppCode) {
+				// Treat as initial generation request
+				await triggerAppGeneration(message.trim());
+				return;
+			}
+			// Otherwise, refine existing app
+			await handleFollowUpSubmit(message.trim());
+		},
+		[generatedAppCode, triggerAppGeneration, handleFollowUpSubmit],
+	);
+
 	// Make functions available to agent tools via window object
 	useEffect(() => {
 		window.triggerAppGeneration = triggerAppGeneration;
@@ -615,6 +645,18 @@ export default function VibeCoder({
 			delete window.handleFollowUpSubmit;
 		};
 	}, [triggerAppGeneration, handleFollowUpSubmit]);
+
+	// If a route provided an initial description (from text submit before project existed),
+	// trigger generation once after callbacks are ready AND project has loaded when on project route.
+	const initialGenRef = useRef(false);
+	useEffect(() => {
+		if (!initialDescription || initialGenRef.current) return;
+		// If we are on a project route, wait until the project is loaded so updates
+		// attach to the correct record instead of creating a duplicate.
+		if (projectId && !project?._id) return;
+		initialGenRef.current = true;
+		void triggerAppGeneration(initialDescription);
+	}, [initialDescription, triggerAppGeneration, project?._id, projectId]);
 
 	// Audio ref for the realtime session
 	const audioRef = useRef<HTMLAudioElement>(null);
@@ -699,7 +741,7 @@ export default function VibeCoder({
 
 	// Handle version selection: set data and persist to URL
 	const handleVersionSelect = useCallback(
-		(
+		async (
 			data: null | {
 				version: number;
 				code: string;
@@ -707,11 +749,18 @@ export default function VibeCoder({
 				previewUrl?: string;
 			},
 		) => {
-			setSelectedVersionData(data);
+			// Set loading states immediately
+			setIsSwitchingVersion(true);
+			setStatus(
+				data ? `Loading v${data.version}...` : "Loading latest version...",
+			);
+
 			const currentSearch = router.state.location.search as {
 				from?: string;
 				version?: number;
 			};
+
+			// Update URL first
 			void router.navigate({
 				to: `/projects/${currentAppHistoryId ?? project?._id}`,
 				search: {
@@ -721,12 +770,13 @@ export default function VibeCoder({
 				replace: true,
 			});
 
-			// Update the live sandbox to match the selected version so the iframe
-			// always reflects the chosen snapshot, even if multiple versions share
-			// the same sandbox domain.
-			(async () => {
-				try {
-					if (data && sandboxId) {
+			try {
+				let finalPreviewUrl: string | undefined;
+				let finalSandboxId = currentSandboxId;
+
+				if (data) {
+					// Handle version selection
+					if (sandboxId) {
 						try {
 							const updateResult = await updateSandboxFilesOnServer({
 								data: {
@@ -736,58 +786,58 @@ export default function VibeCoder({
 									ports: [3000, 5173],
 								},
 							});
-							// If sandbox was replaced, update the sandboxId
+
 							if (updateResult.sandboxReplaced) {
-								currentSandboxId = updateResult.sandboxId;
+								finalSandboxId = updateResult.sandboxId;
 								appendToConsole(
 									"info",
 									"Sandbox was replaced due to inactivity.",
 								);
 							}
+
+							// Get preview URL for the updated sandbox
+							const port = detectPortFromFiles(data.files);
+							const r = await getSandboxUrlOnServer({
+								data: { sandboxId: finalSandboxId, port },
+							});
+							finalPreviewUrl = addCacheBusting(r.url);
 						} catch (_e) {
+							// Fallback to creating new sandbox
 							setIsPreviewSwitch(true);
 							await startSandbox({
 								files: data.files,
 								timeout: 300000,
 								ports: [3000, 5173],
 							});
-							return;
+							// For new sandbox, we'll get the URL from the sandbox creation process
+							finalPreviewUrl = data.previewUrl;
 						}
-					} else if (data && !sandboxId) {
+					} else {
+						// No existing sandbox, create new one
 						setIsPreviewSwitch(true);
 						await startSandbox({
 							files: data.files,
 							timeout: 300000,
 							ports: [3000, 5173],
 						});
-						return;
+						finalPreviewUrl = data.previewUrl;
 					}
 
-					// Handle version preview (data exists)
-					if (data) {
-						const port = detectPortFromFiles(data.files);
+					// Single state update with all data
+					setSelectedVersionData({
+						version: data.version,
+						code: data.code,
+						files: data.files,
+						previewUrl: finalPreviewUrl,
+					});
 
-						const r = await getSandboxUrlOnServer({
-							data: { sandboxId: currentSandboxId, port },
-						});
-
-						const bustedUrl = addCacheBusting(r.url);
-
-						setSelectedVersionData({
-							version: data.version,
-							code: data.code,
-							files: data.files,
-							previewUrl: bustedUrl,
-						});
-						setStatus(`Previewing v${data.version} in sandbox.`);
-						appendToConsole("info", `Preview switched to v${data.version}`);
-						return;
-					}
-
-					// Handle switching back to Latest (no version)
-					if (!data && sandboxId) {
-						const latestFiles = generatedContent?.files ?? project?.files ?? [];
-						if (latestFiles.length > 0) {
+					setStatus(`Previewing v${data.version} in sandbox.`);
+					appendToConsole("info", `Preview switched to v${data.version}`);
+				} else {
+					// Handle switching back to Latest
+					const latestFiles = generatedContent?.files ?? project?.files ?? [];
+					if (latestFiles.length > 0) {
+						if (sandboxId) {
 							try {
 								const updateResult = await updateSandboxFilesOnServer({
 									data: {
@@ -797,15 +847,23 @@ export default function VibeCoder({
 										ports: [3000, 5173],
 									},
 								});
-								// If sandbox was replaced, update the sandboxId
+
 								if (updateResult.sandboxReplaced) {
-									currentSandboxId = updateResult.sandboxId;
+									finalSandboxId = updateResult.sandboxId;
 									appendToConsole(
 										"info",
 										"Sandbox was replaced due to inactivity.",
 									);
 								}
+
+								// Get preview URL for latest version
+								const port = detectPortFromFiles(latestFiles);
+								const r = await getSandboxUrlOnServer({
+									data: { sandboxId: finalSandboxId, port },
+								});
+								finalPreviewUrl = addCacheBusting(r.url);
 							} catch (_e) {
+								// Fallback to creating new sandbox
 								setIsPreviewSwitch(true);
 								await startSandbox({
 									files: latestFiles,
@@ -814,43 +872,41 @@ export default function VibeCoder({
 								});
 								return;
 							}
-
-							const port = detectPortFromFiles(latestFiles);
-
-							const r = await getSandboxUrlOnServer({
-								data: { sandboxId: currentSandboxId, port },
-							});
-
-							const bustedUrl = addCacheBusting(r.url);
-
-							setGeneratedContent((prev) =>
-								prev
-									? {
-											code: prev.code,
-											files: prev.files,
-											previewUrl: bustedUrl,
-											sandboxId: prev.sandboxId,
-										}
-									: prev,
-							);
-							setStatus("Previewing latest version in sandbox.");
-							appendToConsole("info", "Preview switched to Latest");
-						}
-					} else if (!data && !sandboxId) {
-						const latestFiles = generatedContent?.files ?? project?.files ?? [];
-						if (latestFiles.length > 0) {
+						} else {
+							// No existing sandbox, create new one
 							setIsPreviewSwitch(true);
 							await startSandbox({
 								files: latestFiles,
 								timeout: 300000,
 								ports: [3000, 5173],
 							});
+							return;
 						}
+
+						// Single state update for latest version
+						setGeneratedContent((prev) =>
+							prev
+								? {
+										code: prev.code,
+										files: prev.files,
+										previewUrl: finalPreviewUrl,
+										sandboxId: finalSandboxId || undefined,
+									}
+								: prev,
+						);
+
+						setStatus("Previewing latest version in sandbox.");
+						appendToConsole("info", "Preview switched to Latest");
 					}
-				} catch (e) {
-					console.error("Failed to update sandbox for version preview:", e);
 				}
-			})();
+			} catch (e) {
+				console.error("Failed to update sandbox for version preview:", e);
+				// Reset to safe state
+				setStatus("Failed to switch version");
+				appendToConsole("error", "Failed to switch version", "failed");
+			} finally {
+				setIsSwitchingVersion(false);
+			}
 		},
 		[
 			router,
@@ -866,6 +922,109 @@ export default function VibeCoder({
 			detectPortFromFiles,
 		],
 	);
+
+	// Keep "Latest" preview in sync when project files update (e.g., after reopening)
+	useEffect(() => {
+		// Only act when not viewing a specific version and not mid-generation/refinement
+		if (selectedVersionData) return;
+		if (isGeneratingCode || isRefinement || isPreviewSwitch) return;
+		const latestFiles = project?.files ?? [];
+		if (!latestFiles || latestFiles.length === 0) return;
+
+		// Skip sync on initial project load to prevent flickering
+		if (!initialProjectLoadRef.current && project?._id) {
+			initialProjectLoadRef.current = true;
+			return;
+		}
+		const hash = (() => {
+			try {
+				return JSON.stringify(latestFiles);
+			} catch {
+				return String(Date.now());
+			}
+		})();
+		if (latestFilesHashRef.current === hash) return;
+		latestFilesHashRef.current = hash;
+
+		(async () => {
+			try {
+				if (sandboxId) {
+					try {
+						const updateResult = await updateSandboxFilesOnServer({
+							data: {
+								sandboxId,
+								files: latestFiles,
+								timeout: 300000,
+								ports: [3000, 5173],
+							},
+						});
+
+						// If sandbox was replaced, update sandboxId and URL immediately
+						let currentUrl: string | undefined;
+						let currentSandboxId = sandboxId;
+						if (updateResult.sandboxReplaced && updateResult.url) {
+							currentSandboxId = updateResult.sandboxId;
+							currentUrl = updateResult.url;
+							appendToConsole(
+								"info",
+								"Sandbox was replaced due to inactivity.",
+							);
+						} else {
+							const port = detectPortFromFiles(latestFiles);
+							const r = await getSandboxUrlOnServer({
+								data: { sandboxId: currentSandboxId, port },
+							});
+							currentUrl = r.url;
+						}
+
+						const bustedUrl = addCacheBusting(currentUrl ?? "");
+						setGeneratedContent((prev) =>
+							prev
+								? {
+										...prev,
+										previewUrl: bustedUrl,
+										sandboxId: currentSandboxId,
+									}
+								: {
+										code: project?.code || "",
+										files: latestFiles,
+										previewUrl: bustedUrl,
+										sandboxId: currentSandboxId,
+									},
+						);
+						setStatus("Previewing latest version in sandbox.");
+						appendToConsole("info", "Preview synced to Latest");
+						return;
+					} catch (e) {
+						console.error("Failed to update sandbox:", e);
+					}
+				}
+
+				// No sandbox yet: create one for latest files
+				setIsPreviewSwitch(true);
+				await startSandbox({
+					files: latestFiles,
+					timeout: 300000,
+					ports: [3000, 5173],
+				});
+			} catch (e) {
+				console.error("Failed to sync latest preview:", e);
+			}
+		})();
+	}, [
+		project?.files,
+		project?._id,
+		sandboxId,
+		selectedVersionData,
+		isGeneratingCode,
+		isRefinement,
+		isPreviewSwitch,
+		startSandbox,
+		appendToConsole,
+		addCacheBusting,
+		detectPortFromFiles,
+		project?.code,
+	]);
 
 	return (
 		<div className="flex flex-col h-[calc(100vh-4rem)]">
@@ -887,7 +1046,7 @@ export default function VibeCoder({
 						generatedAppCode={generatedAppCode}
 						isMuted={isMuted}
 						onToggleMute={toggleMute}
-						onSendMessage={handleFollowUpSubmit}
+						onSendMessage={handleTextSubmit}
 						selectedModel={selectedModel}
 						onModelChange={setSelectedModel}
 						projectId={currentAppHistoryId}
@@ -900,6 +1059,7 @@ export default function VibeCoder({
 							setDisplayMode={setDisplayMode}
 							generatedAppCode={generatedAppCode}
 							isGeneratingCode={isGeneratingCode}
+							isSwitchingVersion={isSwitchingVersion}
 							previewUrl={previewUrl}
 							files={generatedFiles}
 							selectedFilePath={selectedFilePath}

@@ -1,10 +1,10 @@
 <a href="https://vibecoder-oss.vercel.app">
-  <img alt="Realtime Voice AI VibeCoder Built With Tanstack Start and OpenAI." src="./public/preview/vibecoder.png">
+  <img alt="AI VibeCoder Built With Tanstack Start and OpenAI." src="./public/preview/vibecoder.png">
   <h1 align="center">VibeCoder</h1>  
 </a>
 
 <p align="center">
-  Realtime Voice AI VibeCoder Built With Tanstack Start and OpenAI.
+  AI VibeCoder Built With Tanstack Start and OpenAI.
 </p>
 
 <div align="center">
@@ -43,12 +43,9 @@
 
 This app utilizes the [OpenAI API](https://openai.com/) for its AI capabilities. It is configured to use the following OpenAI models:
 
-- Realtime Model (`gpt-4o-mini-realtime-preview`): Higher quality conversational model with higher latency
-- Realtime Mini Model (`gpt-4o-realtime-preview`): Optimized for low-latency conversational responses
-- Chat Model (`gpt-4.1`): General purpose GPT-4.1 model
-- Chat Mini Model (`gpt-4.1-mini`): Smaller variant of GPT-4.1
+- Realtime Model (`gpt-realtime`): Higher quality conversational model with higher latency
+- Code Model (`gpt-4.1`): General purpose GPT-4.1 model
 - Transcribe Model (`gpt-4o-transcribe`): Optimized for speech-to-text transcription
-- Transcribe Mini Model (`gpt-4o-mini-transcribe`): Optimized for low-latency speech-to-text transcription
 
 The app leverages these models through the [OpenAI Agent SDK](https://openai.github.io/openai-agents-js/guides/voice-agents/) to create a sophisticated voice-driven code generation experience with real-time audio processing and intelligent agent handoffs.
 
@@ -56,7 +53,7 @@ The app leverages these models through the [OpenAI Agent SDK](https://openai.git
 
 You can deploy your own version of VibeCoder to Vercel with one click:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmurabcd%2FVibeCoder&env=VITE_OPENAI_API_KEY&envDescription=You%27ll%20need%20an%20OpenAI%20API%20key.&envLink=https%3A%2F%2Fgithub.com%2Fmurabcd%2FVibeCoder%2Fblob%2Fmain%2F.env.example&demo-title=VibeCoder&demo-description=An%20Open-source%20Realtime%20AI%20Voice%20Agent%20Built%20With%20Tanstack%20Start%20and%20OpenAI.&demo-url=https%3A%2F%2Fvibecoder-oss.vercel.app)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmurabcd%2FVibeCoder&env=VITE_OPENAI_API_KEY&envDescription=You%27ll%20need%20an%20OpenAI%20API%20key.&envLink=https%3A%2F%2Fgithub.com%2Fmurabcd%2FVibeCoder%2Fblob%2Fmain%2F.env.example&demo-title=VibeCoder&demo-description=An%20Open-source%20Voice%20Agent%20Built%20With%20Tanstack%20Start%20and%20OpenAI.&demo-url=https%3A%2F%2Fvibecoder-oss.vercel.app)
 
 ## Running locally
 

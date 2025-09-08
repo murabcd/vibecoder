@@ -56,6 +56,7 @@ interface CodePreviewProps {
 	setDisplayMode: (mode: "preview" | "code") => void;
 	generatedAppCode: string | null;
 	isGeneratingCode: boolean;
+	isSwitchingVersion?: boolean;
 	previewUrl: string | null;
 	files: Array<{ path: string; content: string }>;
 	selectedFilePath: string | null;
@@ -73,6 +74,7 @@ export default function CodePreview({
 	setDisplayMode,
 	generatedAppCode,
 	isGeneratingCode,
+	isSwitchingVersion = false,
 	previewUrl,
 	files,
 	selectedFilePath,
@@ -220,10 +222,12 @@ export default function CodePreview({
 						</ResizablePanelGroup>
 					) : (
 						<div className="flex-1 relative overflow-auto">
-							{isGeneratingCode && !previewUrl ? (
-								<div className="h-full w-full flex flex-col items-center justify-center text-muted-foreground">
-									<Loader size={24} className="animate-spin mb-2" />
-									<p>Generating...</p>
+							{(isGeneratingCode && !previewUrl) || isSwitchingVersion ? (
+								<div className="h-full w-full flex flex-row items-center justify-center text-muted-foreground gap-2">
+									<Loader size={24} className="animate-spin" />
+									<p>
+										{isSwitchingVersion ? "Previewing..." : "Generating..."}
+									</p>
 								</div>
 							) : (
 								<iframe

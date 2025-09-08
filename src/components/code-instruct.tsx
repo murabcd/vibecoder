@@ -162,7 +162,44 @@ export default function CodeInstruct({
 		}
 	};
 
-	const isActive = isGeneratingCode || generatedAppCode;
+    const isActive = isGeneratingCode || generatedAppCode;
+    const inputPlaceholder = generatedAppCode
+        ? "Ask a follow up..."
+        : "Describe the app you want to build...";
+
+    // Intercept text send: if we don't have a project yet, create one and navigate
+    // with the message so the project page can trigger generation.
+    const handleTextSend = async (message: string) => {
+        const trimmed = message.trim();
+        if (!trimmed) return;
+        if (projectId) {
+            onSendMessage(trimmed);
+            return;
+        }
+        if (creatingDraftRef.current) return;
+        creatingDraftRef.current = true;
+        try {
+            const newId = await createProject({
+                title: "Untitled",
+                description: "",
+                code: "",
+                files: [],
+            });
+            try {
+                sessionStorage.setItem("vc:initialDescription", trimmed);
+            } catch {}
+            // clear local input since we captured it
+            setFollowUpText("");
+            await router.navigate({
+                to: `/projects/${newId}`,
+                search: { from: "all" },
+            });
+        } catch (e) {
+            console.error("Failed to create and navigate to project:", e);
+        } finally {
+            creatingDraftRef.current = false;
+        }
+    };
 
 	return (
 		<div
@@ -211,18 +248,19 @@ export default function CodeInstruct({
 				)}
 			</div>
 			<div className="mt-auto">
-				<MessageInput
-					inputText={followUpText}
-					setInputText={setFollowUpText}
-					isListening={isListening}
-					onToggleListening={handleToggleListening}
-					status={status}
-					isMuted={isMuted}
-					onToggleMute={onToggleMute}
-					onSendMessage={onSendMessage}
-					selectedModel={selectedModel}
-					onModelChange={onModelChange}
-				/>
+            <MessageInput
+                inputText={followUpText}
+                setInputText={setFollowUpText}
+                isListening={isListening}
+                onToggleListening={handleToggleListening}
+                status={status}
+                isMuted={isMuted}
+                onToggleMute={onToggleMute}
+                onSendMessage={handleTextSend}
+                selectedModel={selectedModel}
+                onModelChange={onModelChange}
+                placeholder={inputPlaceholder}
+            />
 			</div>
 		</div>
 	);

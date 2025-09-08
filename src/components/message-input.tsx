@@ -30,6 +30,7 @@ export interface MessagesProps {
 	onSendMessage: (message: string) => void;
 	selectedModel: string;
 	onModelChange: (model: string) => void;
+	placeholder?: string;
 }
 
 function MessageInput({
@@ -43,6 +44,7 @@ function MessageInput({
 	onSendMessage,
 	selectedModel,
 	onModelChange,
+	placeholder,
 }: MessagesProps) {
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -77,7 +79,7 @@ function MessageInput({
 					ref={textareaRef}
 					id="followUpInputArea"
 					className="w-full resize-none overflow-y-auto text-sm bg-muted pr-24 dark:border-zinc-700 border border-input rounded-2xl min-h-[120px]"
-					placeholder="Ask a follow up..."
+					placeholder={placeholder ?? "Ask a follow up..."}
 					value={inputText}
 					onChange={(e) => {
 						setInputText(e.target.value);
@@ -132,34 +134,36 @@ function MessageInput({
 						<TooltipTrigger asChild>
 							<Button
 								size="icon"
-								variant="outline"
-								onClick={handleSendMessage}
-								disabled={!inputText.trim()}
-								className="rounded-full disabled:opacity-50 cursor-pointer"
-								aria-label="Send message"
-							>
-								<ArrowUp size={20} />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>
-							<p>Send message</p>
-						</TooltipContent>
-					</Tooltip>
-
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								size="icon"
 								variant="default"
-								onClick={onToggleListening}
+								onClick={
+									inputText.trim() ? handleSendMessage : onToggleListening
+								}
 								className="rounded-full cursor-pointer"
-								aria-label={isListening ? "Stop vibing" : "Start vibing"}
+								aria-label={
+									inputText.trim()
+										? "Send message"
+										: isListening
+											? "Stop vibing"
+											: "Start vibing"
+								}
 							>
-								{isListening ? <Square size={20} /> : <AudioLines size={20} />}
+								{inputText.trim() ? (
+									<ArrowUp size={20} />
+								) : isListening ? (
+									<Square size={20} />
+								) : (
+									<AudioLines size={20} />
+								)}
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent>
-							<p>{isListening ? "Stop vibing" : "Start vibing"}</p>
+							<p>
+								{inputText.trim()
+									? "Send message"
+									: isListening
+										? "Stop vibing"
+										: "Start vibing"}
+							</p>
 						</TooltipContent>
 					</Tooltip>
 				</div>
