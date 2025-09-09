@@ -44,6 +44,7 @@ import {
 	useSidebar,
 } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface AppHistoryItem {
 	_id: Id<"projects">;
@@ -67,14 +68,18 @@ export function NavProjects() {
 	const [appToDelete, setAppToDelete] = useState<AppHistoryItem | null>(null);
 
 	// Convex queries and mutations
-	const appHistory = useQuery(api.projects.list) ?? [];
+	const appHistory = useQuery(api.projects.list);
 	const removeApp = useMutation(api.projects.remove);
 	const updateAppTitle = useMutation(api.projects.updateTitle);
 	const toggleStarred = useMutation(api.projects.toggleStarred);
 
+	// Handle loading state - don't show empty arrays while loading
+	const projects = appHistory ?? [];
+	const isLoading = appHistory === undefined;
+
 	// Separate favorite and non-favorite apps
-	const favoriteApps = appHistory.filter((app) => app.starred);
-	const regularApps = appHistory.filter((app) => !app.starred);
+	const favoriteApps = projects.filter((app) => app.starred);
+	const regularApps = projects.filter((app) => !app.starred);
 
 	const handleEditStart = (app: AppHistoryItem) => {
 		setEditingId(app._id);
@@ -154,6 +159,19 @@ export function NavProjects() {
 			toast("Project is now private");
 		}
 	};
+
+	const renderSkeletonList = (count: number) => (
+		<>
+			{Array.from({ length: count }, () => crypto.randomUUID()).map((id) => (
+				<SidebarMenuItem key={id}>
+					<SidebarMenuButton>
+						<Skeleton className="h-4 w-4" />
+						<Skeleton className="h-4 flex-1" />
+					</SidebarMenuButton>
+				</SidebarMenuItem>
+			))}
+		</>
+	);
 
 	const renderAppList = (
 		apps: AppHistoryItem[],
@@ -249,6 +267,18 @@ export function NavProjects() {
 			))}
 		</>
 	);
+
+	if (isLoading) {
+		return (
+			<>
+				{/* Loading state for sidebar */}
+				<SidebarGroup className="group-data-[collapsible=icon]:hidden">
+					<SidebarGroupLabel>History</SidebarGroupLabel>
+					<SidebarMenu>{renderSkeletonList(3)}</SidebarMenu>
+				</SidebarGroup>
+			</>
+		);
+	}
 
 	return (
 		<>

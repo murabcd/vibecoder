@@ -5,6 +5,7 @@ import type { Id } from "convex/_generated/dataModel";
 import { FolderOpen } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { ProjectCard } from "@/components/project-card";
+import { ProjectSkeletonGrid } from "@/components/project-skeleton";
 
 interface AppHistoryItem {
 	_id: Id<"projects">;
@@ -25,7 +26,9 @@ export const Route = createFileRoute("/_app/projects/all")({
 
 function RouteComponent() {
 	const navigate = useNavigate();
-	const appHistory = useQuery(api.projects.list) ?? [];
+	const appHistory = useQuery(api.projects.list);
+	const isLoading = appHistory === undefined;
+	const projects = appHistory ?? [];
 
 	const handleProjectClick = (app: AppHistoryItem) => {
 		navigate({
@@ -38,9 +41,17 @@ function RouteComponent() {
 		navigate({ to: "/" });
 	};
 
+	if (isLoading) {
+		return (
+			<div className="flex-1 space-y-4 p-4 pt-6">
+				<ProjectSkeletonGrid count={6} />
+			</div>
+		);
+	}
+
 	return (
 		<div className="flex-1 space-y-4 p-4 pt-6">
-			{appHistory.length === 0 ? (
+			{projects.length === 0 ? (
 				<div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
 					<EmptyState
 						icon={FolderOpen}
@@ -52,7 +63,7 @@ function RouteComponent() {
 				</div>
 			) : (
 				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-					{appHistory.map((app) => (
+					{projects.map((app) => (
 						<ProjectCard
 							key={app._id}
 							project={app}

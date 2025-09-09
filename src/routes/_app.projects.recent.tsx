@@ -5,6 +5,7 @@ import type { Id } from "convex/_generated/dataModel";
 import { Clock } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { ProjectCard } from "@/components/project-card";
+import { ProjectSkeletonGrid } from "@/components/project-skeleton";
 
 interface AppHistoryItem {
 	_id: Id<"projects">;
@@ -25,10 +26,12 @@ export const Route = createFileRoute("/_app/projects/recent")({
 
 function RouteComponent() {
 	const navigate = useNavigate();
-	const allProjects = useQuery(api.projects.list) ?? [];
+	const allProjects = useQuery(api.projects.list);
+	const isLoading = allProjects === undefined;
+	const projects = allProjects ?? [];
 
 	// Show only the 12 most recent projects
-	const recentProjects = allProjects
+	const recentProjects = projects
 		.sort((a, b) => b.createdAt - a.createdAt)
 		.slice(0, 12);
 
@@ -44,6 +47,14 @@ function RouteComponent() {
 	const handleProjectDelete = () => {
 		navigate({ to: "/" });
 	};
+
+	if (isLoading) {
+		return (
+			<div className="flex-1 space-y-4 p-4 pt-6">
+				<ProjectSkeletonGrid count={6} />
+			</div>
+		);
+	}
 
 	return (
 		<div className="flex-1 space-y-4 p-4 pt-6">
