@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import z from "zod/v3";
+import { z } from "zod";
 
 export type SandboxEvent =
 	| { type: "status"; message: string; progress?: number }
