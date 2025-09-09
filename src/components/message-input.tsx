@@ -1,6 +1,6 @@
 import { useRef, useEffect, useCallback } from "react";
 
-import { AudioLines, Square, ArrowUp, Mic, MicOff } from "lucide-react";
+import { AudioLines, Square, ArrowUp, VolumeOff, Volume2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -98,24 +98,6 @@ function MessageInput({
 					}}
 				/>
 				<div className="absolute bottom-3 left-3 flex items-center gap-2">
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="outline"
-								size="icon"
-								onClick={onToggleMute}
-								disabled={!isListening}
-								className="rounded-full cursor-pointer"
-								aria-label={isMuted ? "Unmute" : "Mute"}
-							>
-								{isMuted ? <MicOff size={20} /> : <Mic size={20} />}
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>
-							<p>{isMuted ? "Unmute" : "Mute"}</p>
-						</TooltipContent>
-					</Tooltip>
-
 					<Select value={selectedModel} onValueChange={onModelChange}>
 						<SelectTrigger className="w-[150px] h-8 text-xs bg-background border-border hover:bg-accent hover:text-accent-foreground cursor-pointer">
 							<SelectValue placeholder="Select model" />
@@ -128,13 +110,34 @@ function MessageInput({
 							))}
 						</SelectContent>
 					</Select>
+
+					{isListening && (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="outline"
+									size="icon"
+									onClick={onToggleMute}
+									className="rounded-full cursor-pointer"
+									aria-label={isMuted ? "Unmute" : "Mute"}
+								>
+									{isMuted ? <VolumeOff size={20} /> : <Volume2 size={20} />}
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								<p>{isMuted ? "Unmute" : "Mute"}</p>
+							</TooltipContent>
+						</Tooltip>
+					)}
 				</div>
 				<div className="absolute bottom-3 right-3 flex items-center gap-2">
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button
 								size="icon"
-								variant="default"
+								variant={
+									!inputText.trim() && !isListening ? "outline" : "default"
+								}
 								onClick={
 									inputText.trim() ? handleSendMessage : onToggleListening
 								}

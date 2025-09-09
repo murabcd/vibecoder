@@ -16,9 +16,9 @@ interface SandboxPayload {
 }
 
 interface UseSandboxStreamReturn {
-    state: SandboxStreamState;
-    startSandbox: (payload: SandboxPayload) => Promise<void>;
-    reset: () => void;
+	state: SandboxStreamState;
+	startSandbox: (payload: SandboxPayload) => Promise<void>;
+	reset: () => void;
 }
 
 export function useSandboxStream(): UseSandboxStreamReturn {
@@ -130,8 +130,8 @@ export function useSandboxStream(): UseSandboxStreamReturn {
 			}));
 		}
 
-    // No cleanup return; request completes or errors above.
-}, []);
+		// No cleanup return; request completes or errors above.
+	}, []);
 
 	const reset = useCallback(() => {
 		setState({

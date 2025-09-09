@@ -33,6 +33,7 @@ const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 // Utility function to safely set cookies
 function setCookie(name: string, value: string, maxAge: number) {
 	const cookie = `${name}=${value}; path=/; max-age=${maxAge}`;
+	// biome-ignore lint/suspicious/noDocumentCookie: direct cookie assignment
 	document.cookie = cookie;
 }
 

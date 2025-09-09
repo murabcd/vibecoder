@@ -37,7 +37,7 @@ function RouteComponent() {
 		navigate({
 			to: "/projects/$projectId",
 			params: { projectId: app._id },
-			search: { from: "recent" },
+			search: { from: "recent", autostart: false, version: undefined },
 		});
 	};
 

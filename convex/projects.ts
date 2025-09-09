@@ -28,24 +28,20 @@ export const create = mutation({
 		previewUrl: v.optional(v.string()),
 		sandboxId: v.optional(v.string()),
 	},
-    handler: async (ctx, args) => {
-        // Create a new project without creating a version yet.
-        // The first real version (v1) will be created on the first update
-        // when actual code/files are saved.
-        const now = Date.now();
-        const projectId = await ctx.db.insert("projects", {
-            title: args.title,
-            description: args.description,
-            code: args.code,
-            files: args.files,
-            previewUrl: args.previewUrl,
-            sandboxId: args.sandboxId,
-            // currentVersion intentionally omitted until first real update
-            createdAt: now,
-        });
+	handler: async (ctx, args) => {
+		const now = Date.now();
+		const projectId = await ctx.db.insert("projects", {
+			title: args.title,
+			description: args.description,
+			code: args.code,
+			files: args.files,
+			previewUrl: args.previewUrl,
+			sandboxId: args.sandboxId,
+			createdAt: now,
+		});
 
-        return projectId;
-    },
+		return projectId;
+	},
 });
 
 export const update = mutation({
@@ -68,15 +64,11 @@ export const update = mutation({
 	handler: async (ctx, args) => {
 		const { id, title, description, code, files, previewUrl, sandboxId } = args;
 
-		// Build updates explicitly to preserve types
-
-		// Fetch current project to compare changes and determine version
 		const existing = await ctx.db.get(id);
 		if (!existing) {
 			throw new Error("Project not found");
 		}
 
-		// Determine if code/files have changed
 		const nextCode: string =
 			code !== undefined ? code : (existing.code as string);
 		const nextFiles: Array<{ path: string; content: string }> =
@@ -92,19 +84,16 @@ export const update = mutation({
 				const b = JSON.stringify(nextFiles);
 				return a !== b;
 			} catch {
-				// Fallback: assume changed if cannot compare
 				return true;
 			}
 		})();
 
 		const shouldCreateVersion = codeChanged || filesChanged;
 
-        // Apply updates to project
-        if (shouldCreateVersion) {
-            const now = Date.now();
+		if (shouldCreateVersion) {
+			const now = Date.now();
 
-            // First real update creates v1; thereafter increment normally
-            const nextVersion = (existing.currentVersion ?? 0) + 1;
+			const nextVersion = (existing.currentVersion ?? 0) + 1;
 
 			const patchUpdates: Partial<{
 				title: string;
@@ -127,12 +116,12 @@ export const update = mutation({
 
 			await ctx.db.patch(id, patchUpdates);
 
-            await ctx.db.insert("versions", {
-                projectId: id,
-                version: nextVersion,
-                code: nextCode,
-                files: nextFiles,
-                previewUrl:
+			await ctx.db.insert("versions", {
+				projectId: id,
+				version: nextVersion,
+				code: nextCode,
+				files: nextFiles,
+				previewUrl:
 					previewUrl !== undefined
 						? (previewUrl as string | undefined)
 						: (existing.previewUrl as string | undefined),
@@ -146,7 +135,6 @@ export const update = mutation({
 
 			return id;
 		} else {
-			// No code/files change — just patch metadata
 			const patchUpdates: Partial<{
 				title: string;
 				description: string;
@@ -168,24 +156,21 @@ export const update = mutation({
 	},
 });
 
-// List all versions for a project (latest first)
 export const listVersions = query({
 	args: { projectId: v.optional(v.id("projects")) },
 	handler: async (ctx, args) => {
 		if (!args.projectId) {
 			return [];
 		}
+		const projectId = args.projectId;
 		return await ctx.db
 			.query("versions")
-			.withIndex("by_project_version", (q) =>
-				q.eq("projectId", args.projectId!),
-			)
+			.withIndex("by_project_version", (q) => q.eq("projectId", projectId))
 			.order("desc")
 			.collect();
 	},
 });
 
-// Fetch a specific version by number
 export const getVersion = query({
 	args: { projectId: v.id("projects"), version: v.number() },
 	handler: async (ctx, args) => {
@@ -198,7 +183,6 @@ export const getVersion = query({
 	},
 });
 
-// Revert a project to a specific version and create a new snapshot
 export const revertToVersion = mutation({
 	args: {
 		id: v.id("projects"),
@@ -219,10 +203,9 @@ export const revertToVersion = mutation({
 		const target = targetDocs[0];
 		if (!target) throw new Error(`Version ${version} not found`);
 
-        const now = Date.now();
-        const nextVersion = (existing.currentVersion ?? 0) + 1;
+		const now = Date.now();
+		const nextVersion = (existing.currentVersion ?? 0) + 1;
 
-		// Apply revert content to project
 		await ctx.db.patch(id, {
 			code: target.code,
 			files: target.files as Array<{ path: string; content: string }>,
@@ -231,7 +214,6 @@ export const revertToVersion = mutation({
 			currentVersion: nextVersion,
 		});
 
-		// Record a new version noting the revert
 		await ctx.db.insert("versions", {
 			projectId: id,
 			version: nextVersion,
@@ -250,6 +232,15 @@ export const revertToVersion = mutation({
 export const remove = mutation({
 	args: { id: v.id("projects") },
 	handler: async (ctx, args) => {
+		const versions = await ctx.db
+			.query("versions")
+			.withIndex("by_project", (q) => q.eq("projectId", args.id))
+			.collect();
+
+		for (const version of versions) {
+			await ctx.db.delete(version._id);
+		}
+
 		await ctx.db.delete(args.id);
 	},
 });
@@ -264,7 +255,6 @@ export const updateTitle = mutation({
 	},
 });
 
-// Toggle starred status for an app
 export const toggleStarred = mutation({
 	args: {
 		id: v.id("projects"),

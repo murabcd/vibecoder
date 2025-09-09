@@ -90,29 +90,29 @@ export default function CodeInstruct({
 		});
 	}, [versions]);
 
-    // Initialize or update selection from defaultVersion (e.g., URL param)
-    // Only react to changes in defaultVersion/versions, not local selection changes.
-    useEffect(() => {
-        if (!versions || versions.length === 0) return;
-        if (defaultVersion) {
-            setSelectedVersion(String(defaultVersion));
-            if (onSelectVersion) {
-                const v = versions.find((x) => x.version === defaultVersion);
-                if (v) {
-                    onSelectVersion({
-                        version: v.version as number,
-                        code: v.code as string,
-                        files: v.files as Array<{ path: string; content: string }>,
-                        previewUrl: (v.previewUrl as string | undefined) ?? undefined,
-                    });
-                }
-            }
-        } else {
-            // No version specified in URL — show latest
-            setSelectedVersion("");
-            onSelectVersion?.(null);
-        }
-    }, [defaultVersion, versions, onSelectVersion]);
+	// Initialize or update selection from defaultVersion (e.g., URL param)
+	// Only react to changes in defaultVersion/versions, not local selection changes.
+	useEffect(() => {
+		if (!versions || versions.length === 0) return;
+		if (defaultVersion) {
+			setSelectedVersion(String(defaultVersion));
+			if (onSelectVersion) {
+				const v = versions.find((x) => x.version === defaultVersion);
+				if (v) {
+					onSelectVersion({
+						version: v.version as number,
+						code: v.code as string,
+						files: v.files as Array<{ path: string; content: string }>,
+						previewUrl: (v.previewUrl as string | undefined) ?? undefined,
+					});
+				}
+			}
+		} else {
+			// No version specified in URL — show latest
+			setSelectedVersion("");
+			onSelectVersion?.(null);
+		}
+	}, [defaultVersion, versions, onSelectVersion]);
 
 	const handleVersionChange = (e: ChangeEvent<HTMLSelectElement>) => {
 		const value = e.target.value;
@@ -162,44 +162,44 @@ export default function CodeInstruct({
 		}
 	};
 
-    const isActive = isGeneratingCode || generatedAppCode;
-    const inputPlaceholder = generatedAppCode
-        ? "Ask a follow up..."
-        : "Describe the app you want to build...";
+	const isActive = isGeneratingCode || generatedAppCode;
+	const inputPlaceholder = generatedAppCode
+		? "Ask a follow up..."
+		: "Describe the app you want to build...";
 
-    // Intercept text send: if we don't have a project yet, create one and navigate
-    // with the message so the project page can trigger generation.
-    const handleTextSend = async (message: string) => {
-        const trimmed = message.trim();
-        if (!trimmed) return;
-        if (projectId) {
-            onSendMessage(trimmed);
-            return;
-        }
-        if (creatingDraftRef.current) return;
-        creatingDraftRef.current = true;
-        try {
-            const newId = await createProject({
-                title: "Untitled",
-                description: "",
-                code: "",
-                files: [],
-            });
-            try {
-                sessionStorage.setItem("vc:initialDescription", trimmed);
-            } catch {}
-            // clear local input since we captured it
-            setFollowUpText("");
-            await router.navigate({
-                to: `/projects/${newId}`,
-                search: { from: "all" },
-            });
-        } catch (e) {
-            console.error("Failed to create and navigate to project:", e);
-        } finally {
-            creatingDraftRef.current = false;
-        }
-    };
+	// Intercept text send: if we don't have a project yet, create one and navigate
+	// with the message so the project page can trigger generation.
+	const handleTextSend = async (message: string) => {
+		const trimmed = message.trim();
+		if (!trimmed) return;
+		if (projectId) {
+			onSendMessage(trimmed);
+			return;
+		}
+		if (creatingDraftRef.current) return;
+		creatingDraftRef.current = true;
+		try {
+			const newId = await createProject({
+				title: "Untitled",
+				description: "",
+				code: "",
+				files: [],
+			});
+			try {
+				sessionStorage.setItem("vc:initialDescription", trimmed);
+			} catch {}
+			// clear local input since we captured it
+			setFollowUpText("");
+			await router.navigate({
+				to: `/projects/${newId}`,
+				search: { from: "all" },
+			});
+		} catch (e) {
+			console.error("Failed to create and navigate to project:", e);
+		} finally {
+			creatingDraftRef.current = false;
+		}
+	};
 
 	return (
 		<div
@@ -248,19 +248,19 @@ export default function CodeInstruct({
 				)}
 			</div>
 			<div className="mt-auto">
-            <MessageInput
-                inputText={followUpText}
-                setInputText={setFollowUpText}
-                isListening={isListening}
-                onToggleListening={handleToggleListening}
-                status={status}
-                isMuted={isMuted}
-                onToggleMute={onToggleMute}
-                onSendMessage={handleTextSend}
-                selectedModel={selectedModel}
-                onModelChange={onModelChange}
-                placeholder={inputPlaceholder}
-            />
+				<MessageInput
+					inputText={followUpText}
+					setInputText={setFollowUpText}
+					isListening={isListening}
+					onToggleListening={handleToggleListening}
+					status={status}
+					isMuted={isMuted}
+					onToggleMute={onToggleMute}
+					onSendMessage={handleTextSend}
+					selectedModel={selectedModel}
+					onModelChange={onModelChange}
+					placeholder={inputPlaceholder}
+				/>
 			</div>
 		</div>
 	);

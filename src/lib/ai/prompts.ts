@@ -61,6 +61,7 @@ Use the refine_app function when users want to modify existing apps. This functi
 - Understand the current app structure before making changes
 - Be precise with refinement instructions to ensure changes are applied correctly
 - If major structural changes are needed, consider whether a fresh app creation might be better
+- Do not rely on shell state (no \`cd\`, no chained \`&&\`)
 `;
 
 export const createAppPrompt = `
@@ -89,7 +90,7 @@ Guidelines:
 3. Static apps: include a complete \`index.html\` with inline JS/CSS or Tailwind Play CDN when suitable.
 4. Accessibility: use semantic HTML, ensure keyboard accessibility, and adequate color contrast.
 5. Do not include TODOs or placeholders unless explicitly requested.
-6. Prefer pnpm over npm when authoring scripts or install instructions. You can include a \`packageManager\` field for pnpm if appropriate.
+6. Prefer pnpm over npm when authoring scripts or install instructions. You can include a \`packageManager field for pnpm if appropriate\`.
 7. Do not rely on shell state in scripts or docs (no \`cd\`, no chained \`&&\`). Assume all commands run from the project root.
 8. Include essential config/support files when required by the chosen stack (e.g., \`tsconfig.json\`, \`vite.config.ts\`, \`tailwind.config.ts\`, \`postcss.config.js/ts\`, \`.env.example\`).
 9. For Vite projects, the dev script should prefer port 5173 and include \`--host\`. For Next.js, prefer port 3000 and bind to 0.0.0.0.
@@ -122,4 +123,5 @@ Constraints for Next.js projects:
 export const appNameGenerationPrompt = `You will generate a short title based on the first message a user begins a conversation with.
 - Ensure it is not more than 80 characters long
 - The title should be a summary of the user's message
-- Do not use quotes or colons`;
+- Do not use quotes or colons
+- Do not rely on shell state (no \`cd\`, no chained \`&&\`)`;

@@ -29,17 +29,6 @@ function RouteComponent() {
 	const search = Route.useSearch();
 	const router = useRouter();
 
-	const project = useQuery(api.projects.get, {
-		id: projectId as Id<"projects">,
-	});
-
-	if (project === null) {
-		return <NotFound />;
-	}
-
-	// If autostart is present, strip it from the URL after initial render to avoid
-	// re-triggering on refresh/navigation. Coder component will still receive the
-	// initial autostart prop during first mount.
 	// Read optional generate param directly from URL or sessionStorage ONCE
 	const { generateFromUrl, generateParam } = useMemo(() => {
 		try {
@@ -58,6 +47,14 @@ function RouteComponent() {
 			};
 		}
 	}, []);
+
+	const project = useQuery(api.projects.get, {
+		id: projectId as Id<"projects">,
+	});
+
+	if (project === null) {
+		return <NotFound />;
+	}
 
 	// Clean URL only if we used an URL param (sessionStorage needs no cleanup)
 	if (search.autostart || generateFromUrl) {

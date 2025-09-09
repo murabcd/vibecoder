@@ -648,13 +648,11 @@ export default function VibeCoder({
 
 	// If a route provided an initial description (from text submit before project existed),
 	// trigger generation once after callbacks are ready AND project has loaded when on project route.
-	const initialGenRef = useRef(false);
 	useEffect(() => {
-		if (!initialDescription || initialGenRef.current) return;
+		if (!initialDescription) return;
 		// If we are on a project route, wait until the project is loaded so updates
 		// attach to the correct record instead of creating a duplicate.
 		if (projectId && !project?._id) return;
-		initialGenRef.current = true;
 		void triggerAppGeneration(initialDescription);
 	}, [initialDescription, triggerAppGeneration, project?._id, projectId]);
 
@@ -729,10 +727,8 @@ export default function VibeCoder({
 	}, [isMuted, mute]);
 
 	// Auto-start voice session once when arriving with autostart flag
-	const autostartRef = useRef(false);
 	useEffect(() => {
-		if (autostart && !autostartRef.current) {
-			autostartRef.current = true;
+		if (autostart) {
 			void startListening();
 		}
 	}, [autostart, startListening]);
@@ -936,13 +932,7 @@ export default function VibeCoder({
 			initialProjectLoadRef.current = true;
 			return;
 		}
-		const hash = (() => {
-			try {
-				return JSON.stringify(latestFiles);
-			} catch {
-				return String(Date.now());
-			}
-		})();
+		const hash = JSON.stringify(latestFiles);
 		if (latestFilesHashRef.current === hash) return;
 		latestFilesHashRef.current = hash;
 
